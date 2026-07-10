@@ -3,13 +3,14 @@ package com.hung.roomrental.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,8 +20,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "renter")
@@ -32,12 +35,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class renter {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id", nullable = false, unique = true, length = 30)
+    private String id;
 
+    @NotBlank(message = "Tên khách thuê không được để trống")
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
+    @NotBlank(message = "CCCD không được để trống")
     @Column(name = "cccd_number", nullable = false, unique = true, length = 20)
     private String cccdNumber;
 
@@ -47,15 +52,25 @@ public class renter {
     @Column(name = "dob")
     private LocalDate dob;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
+    // ĐÃ SỬA: Chuyển từ LAZY sang EAGER để tránh lỗi LazyInitializationException
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "room_number")
     private room room;
 
-    @OneToMany(mappedBy = "renter")
-    @JsonIgnore // Ngắt vòng lặp danh sách phương tiện
-    private List<vehicle> vehicles = new ArrayList<>();
+    @Transient
+    @JsonIgnore
+    private String roomNumber;
+
+    @JsonProperty("roomNumber")
+    public String getRoomNumber() {
+        return room != null ? room.getRoomNumber() : roomNumber;
+    }
+
+    public void setRoomNumber(String roomNumber) {
+        this.roomNumber = roomNumber;
+    }
 
     @OneToMany(mappedBy = "renter")
-    @JsonIgnore // Ngắt vòng lặp danh sách tài khoản
+    @JsonIgnore
     private List<account> accounts = new ArrayList<>();
 }

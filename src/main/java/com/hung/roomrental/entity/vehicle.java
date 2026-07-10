@@ -2,16 +2,16 @@ package com.hung.roomrental.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,8 +28,8 @@ import lombok.Setter;
 public class vehicle {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id", nullable = false, unique = true, length = 40)
+    private String id;
 
     @Column(name = "plate_number", nullable = false, unique = true, length = 20)
     private String plateNumber;
@@ -37,8 +37,21 @@ public class vehicle {
     @Column(name = "vehicle_type", length = 20)
     private String vehicleType;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "renter_id", nullable = false)
-    @JsonIgnoreProperties({"vehicles", "accounts", "room", "hibernateLazyInitializer", "handler"}) // Chỉ lấy thông tin cơ bản của renter, không lấy sâu thêm
-    private renter renter;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "room_number")
+    @JsonIgnoreProperties({"renters", "hibernateLazyInitializer", "handler"})
+    private room room;
+
+    @Transient
+    @JsonIgnore
+    private String roomNumber;
+
+    @JsonProperty("roomNumber")
+    public String getRoomNumber() {
+        return room != null ? room.getRoomNumber() : roomNumber;
+    }
+
+    public void setRoomNumber(String roomNumber) {
+        this.roomNumber = roomNumber;
+    }
 }

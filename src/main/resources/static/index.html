@@ -3,555 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Rental - API Testing Dashboard</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Room Rental - Quản lý phòng</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/app.js?v=1" defer></script>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800">
+<body>
 
-    <div class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-blue-600 text-white shadow-md p-4">
-            <div class="container mx-auto flex justify-between items-center">
-                <h1 class="text-xl font-bold">Room Rental Testing Console</h1>
-                <span class="text-sm bg-blue-700 px-3 py-1 rounded">Spring Boot 4.1.0 Backend</span>
-            </div>
-        </header>
+    <header>
+        <div class="header-container">
+            <h1>Room Rental Console</h1>
+            <span class="badge">Spring Boot Backend</span>
+        </div>
+    </header>
 
-        <!-- Main Content -->
-        <main class="flex-grow container mx-auto p-4 md:p-6">
-            <!-- Navigation Tabs -->
-            <div class="flex border-b border-gray-300 mb-6 space-x-4">
-                <button onclick="switchTab('rooms')" id="tab-rooms" class="py-2 px-4 font-semibold text-blue-600 border-b-2 border-blue-600 focus:outline-none">Phòng trọ</button>
-                <button onclick="switchTab('renters')" id="tab-renters" class="py-2 px-4 font-semibold text-gray-600 hover:text-blue-600 focus:outline-none">Khách thuê</button>
-                <button onclick="switchTab('vehicles')" id="tab-vehicles" class="py-2 px-4 font-semibold text-gray-600 hover:text-blue-600 focus:outline-none">Phương tiện</button>
-                <button onclick="switchTab('accounts')" id="tab-accounts" class="py-2 px-4 font-semibold text-gray-600 hover:text-blue-600 focus:outline-none">Tài khoản</button>
-            </div>
-
-            <!-- TAB: ROOMS -->
-            <section id="content-rooms" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Form thêm phòng -->
-                    <div class="bg-white p-6 rounded-lg shadow-md h-fit">
-                        <h2 class="text-lg font-bold mb-4 text-blue-600">Thêm phòng mới</h2>
-                        <form id="form-room" onsubmit="createRoom(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Số phòng *</label>
-                                <input type="text" id="roomNumber" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Diện tích (m²)</label>
-                                <input type="number" step="0.1" id="roomArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Giá phòng *</label>
-                                <input type="number" id="roomPrice" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Trạng thái</label>
-                                <select id="roomStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
-                                    <option value="AVAILABLE">Trống (AVAILABLE)</option>
-                                    <option value="OCCUPIED">Đã thuê (OCCUPIED)</option>
-                                    <option value="MAINTENANCE">Bảo trì (MAINTENANCE)</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium">Lưu phòng</button>
-                        </form>
-                    </div>
-                    <!-- Danh sách phòng -->
-                    <div class="bg-white p-6 rounded-lg shadow-md col-span-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold text-gray-700">Danh sách phòng</h2>
-                            <button onclick="fetchRooms()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm font-medium">Làm mới</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-550">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Số phòng</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Diện tích</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Giá tiền</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-rooms-body" class="divide-y divide-gray-200 text-sm">
-                                    <!-- Dữ liệu được load bằng Javascript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: RENTERS -->
-            <section id="content-renters" class="tab-content hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Form thêm khách thuê -->
-                    <div class="bg-white p-6 rounded-lg shadow-md h-fit">
-                        <h2 class="text-lg font-bold mb-4 text-blue-600">Thêm khách thuê</h2>
-                        <form id="form-renter" onsubmit="createRenter(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Họ và tên *</label>
-                                <input type="text" id="renterName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Số CCCD *</label>
-                                <input type="text" id="renterCccd" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                                <input type="text" id="renterPhone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Ngày sinh</label>
-                                <input type="date" id="renterDob" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Gán vào phòng (ID phòng)</label>
-                                <input type="number" id="renterRoomId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" placeholder="Ví dụ: 1">
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium">Lưu khách thuê</button>
-                        </form>
-                    </div>
-                    <!-- Danh sách khách thuê -->
-                    <div class="bg-white p-6 rounded-lg shadow-md col-span-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold text-gray-700">Danh sách khách thuê</h2>
-                            <button onclick="fetchRenters()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm font-medium">Làm mới</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tên khách</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">CCCD</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SĐT</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phòng ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-renters-body" class="divide-y divide-gray-200 text-sm">
-                                    <!-- Dữ liệu -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: VEHICLES -->
-            <section id="content-vehicles" class="tab-content hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Form thêm phương tiện -->
-                    <div class="bg-white p-6 rounded-lg shadow-md h-fit">
-                        <h2 class="text-lg font-bold mb-4 text-blue-600">Thêm phương tiện</h2>
-                        <form id="form-vehicle" onsubmit="createVehicle(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Biển số xe *</label>
-                                <input type="text" id="plateNumber" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Loại xe (Ví dụ: Xe máy, Xe đạp)</label>
-                                <input type="text" id="vehicleType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">ID người sở hữu (Renter ID) *</label>
-                                <input type="number" id="vehicleRenterId" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium">Lưu xe</button>
-                        </form>
-                    </div>
-                    <!-- Danh sách phương tiện -->
-                    <div class="bg-white p-6 rounded-lg shadow-md col-span-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold text-gray-700">Danh sách phương tiện</h2>
-                            <button onclick="fetchVehicles()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm font-medium">Làm mới</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Biển số</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Loại xe</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Chủ sở hữu ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-vehicles-body" class="divide-y divide-gray-200 text-sm">
-                                    <!-- Dữ liệu -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: ACCOUNTS -->
-            <section id="content-accounts" class="tab-content hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Form thêm tài khoản -->
-                    <div class="bg-white p-6 rounded-lg shadow-md h-fit">
-                        <h2 class="text-lg font-bold mb-4 text-blue-600">Thêm tài khoản</h2>
-                        <form id="form-account" onsubmit="createAccount(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Tên đăng nhập *</label>
-                                <input type="text" id="username" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Mật khẩu *</label>
-                                <input type="password" id="password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Vai trò *</label>
-                                <select id="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                                    <option value="RENTER">Khách thuê (RENTER)</option>
-                                    <option value="ADMIN">Quản trị viên (ADMIN)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Liên kết Khách thuê (Renter ID)</label>
-                                <input type="number" id="accountRenterId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" placeholder="Bỏ trống nếu là ADMIN">
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium">Lưu tài khoản</button>
-                        </form>
-                    </div>
-                    <!-- Danh sách tài khoản -->
-                    <div class="bg-white p-6 rounded-lg shadow-md col-span-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold text-gray-700">Danh sách tài khoản</h2>
-                            <button onclick="fetchAccounts()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm font-medium">Làm mới</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vai trò</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Khách thuê ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-accounts-body" class="divide-y divide-gray-200 text-sm">
-                                    <!-- Dữ liệu -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer / Logs -->
-        <footer class="bg-gray-800 text-gray-300 p-4 border-t border-gray-700">
-            <div class="container mx-auto">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Logs / System Response:</h3>
-                <div id="log-output" class="bg-black text-green-400 font-mono text-xs p-3 rounded h-24 overflow-y-auto">
-                    Chờ hành động kiểm thử...
-                </div>
-            </div>
-        </footer>
+    <div class="nav-container">
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-link active">Phòng trọ</a>
+            <a href="renters.html" class="nav-link">Khách thuê</a>
+            <a href="vehicles.html" class="nav-link">Phương tiện</a>
+            <a href="accounts.html" class="nav-link">Tài khoản</a>
+        </nav>
     </div>
 
-    <!-- Script Handling API Calls -->
-    <script>
-        const API_BASE = '/api';
-
-        // Ghi log hoạt động
-        function log(message, isError = false) {
-            const logBox = document.getElementById('log-output');
-            const timestamp = new Date().toLocaleTimeString();
-            const colorClass = isError ? 'text-red-400' : 'text-green-400';
-            logBox.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
-        // Chuyển đổi giữa các tab
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`content-${tabId}`).classList.remove('hidden');
-
-            document.querySelectorAll('[id^="tab-"]').forEach(el => {
-                el.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-                el.classList.add('text-gray-600');
-            });
-
-            const activeTab = document.getElementById(`tab-${tabId}`);
-            activeTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-            activeTab.classList.remove('text-gray-600');
-
-            // Load dữ liệu tương ứng
-            if (tabId === 'rooms') fetchRooms();
-            if (tabId === 'renters') fetchRenters();
-            if (tabId === 'vehicles') fetchVehicles();
-            if (tabId === 'accounts') fetchAccounts();
-        }
-
-        // --- ROOMS API CALLS ---
-        async function fetchRooms() {
-            try {
-                const res = await fetch(`${API_BASE}/rooms`);
-                if (!res.ok) throw new Error('Không thể tải danh sách phòng');
-                const rooms = await res.json();
-                const tbody = document.getElementById('table-rooms-body');
-                tbody.innerHTML = '';
-                rooms.forEach(room => {
-                    tbody.innerHTML += `
+    <main>
+        <!-- Card Danh sách phòng hiển thị rộng 100% -->
+        <div class="card" style="width: 100%;">
+            <div class="card-header-flex">
+                <h2>Danh sách phòng</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <!-- Nút bấm mở Form thêm phòng -->
+                    <button onclick="openRoomModal()" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Thêm phòng mới</button>
+                    <button onclick="fetchRooms()" class="btn btn-secondary">Làm mới</button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
                         <tr>
-                            <td class="px-4 py-2">${room.id}</td>
-                            <td class="px-4 py-2 font-semibold">${room.roomNumber}</td>
-                            <td class="px-4 py-2">${room.area || '-'} m²</td>
-                            <td class="px-4 py-2">${parseFloat(room.price).toLocaleString()} VND</td>
-                            <td class="px-4 py-2"><span class="px-2 py-1 rounded text-xs ${room.status === 'AVAILABLE' ? 'bg-green-100 text-green-800' : room.status === 'OCCUPIED' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}">${room.status}</span></td>
-                            <td class="px-4 py-2">
-                                <button onclick="deleteRoom(${room.id})" class="text-red-600 hover:text-red-900 font-medium">Xoá</button>
-                            </td>
+                            <th>ID</th>
+                            <th>Số phòng</th>
+                            <th>Diện tích</th>
+                            <th>Giá tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
                         </tr>
-                    `;
-                });
-                log(`Đã tải thành công ${rooms.length} phòng.`);
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
+                    </thead>
+                    <tbody id="table-rooms-body">
+                        <!-- JS load data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-        async function createRoom(e) {
-            e.preventDefault();
-            const payload = {
-                roomNumber: document.getElementById('roomNumber').value,
-                area: document.getElementById('roomArea').value ? parseFloat(document.getElementById('roomArea').value) : null,
-                price: parseFloat(document.getElementById('roomPrice').value),
-                status: document.getElementById('roomStatus').value
-            };
+        <!-- Hộp thoại nổi (Modal) chứa Form thêm phòng -->
+        <div id="room-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeRoomModal()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem;">Thêm phòng mới</h2>
+                <form id="form-room">
+                    <div class="form-group">
+                        <label>Số phòng *</label>
+                        <input type="text" id="roomNumber" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Diện tích (m²)</label>
+                        <input type="number" step="0.1" id="roomArea" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Giá phòng (VNĐ) *</label>
+                        <input type="number" id="roomPrice" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Trạng thái</label>
+                        <select id="roomStatus" class="form-control">
+                            <option value="AVAILABLE">Trống (AVAILABLE)</option>
+                            <option value="OCCUPIED">Đã thuê (OCCUPIED)</option>
+                            <option value="MAINTENANCE">Bảo trì (MAINTENANCE)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu phòng</button>
+                </form>
+            </div>
+        </div>
+    </main>
 
-            try {
-                const res = await fetch(`${API_BASE}/rooms`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) throw new Error('Không thể tạo phòng mới');
-                log('Tạo phòng mới thành công!');
-                document.getElementById('form-room').reset();
-                fetchRooms();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
+    <footer>
+        <div class="footer-container">
+            <h3>Logs / System Response:</h3>
+            <div id="log-output" class="log-box">Chờ hành động kiểm thử...</div>
+        </div>
+    </footer>
 
-        async function deleteRoom(id) {
-            if (!confirm('Bạn có muốn xoá phòng này?')) return;
-            try {
-                const res = await fetch(`${API_BASE}/rooms/${id}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('Không thể xoá phòng');
-                log(`Đã xoá phòng ID: ${id}`);
-                fetchRooms();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        // --- RENTERS API CALLS ---
-        async function fetchRenters() {
-            try {
-                const res = await fetch(`${API_BASE}/renters`);
-                if (!res.ok) throw new Error('Không thể tải khách thuê');
-                const renters = await res.json();
-                const tbody = document.getElementById('table-renters-body');
-                tbody.innerHTML = '';
-                renters.forEach(renter => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="px-4 py-2">${renter.id}</td>
-                            <td class="px-4 py-2 font-semibold">${renter.fullName}</td>
-                            <td class="px-4 py-2">${renter.cccdNumber}</td>
-                            <td class="px-4 py-2">${renter.phone || '-'}</td>
-                            <td class="px-4 py-2">${renter.room ? renter.room.id : '-'}</td>
-                            <td class="px-4 py-2">
-                                <button onclick="deleteRenter(${renter.id})" class="text-red-600 hover:text-red-900 font-medium">Xoá</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                log(`Đã tải ${renters.length} khách thuê.`);
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        async function createRenter(e) {
-            e.preventDefault();
-            const roomId = document.getElementById('renterRoomId').value;
-            const payload = {
-                fullName: document.getElementById('renterName').value,
-                cccdNumber: document.getElementById('renterCccd').value,
-                phone: document.getElementById('renterPhone').value,
-                dob: document.getElementById('renterDob').value || null,
-                room: roomId ? { id: parseInt(roomId) } : null
-            };
-
-            try {
-                const res = await fetch(`${API_BASE}/renters`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) throw new Error('Không thể thêm khách thuê');
-                log('Thêm khách thuê thành công!');
-                document.getElementById('form-renter').reset();
-                fetchRenters();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        async function deleteRenter(id) {
-            if (!confirm('Xoá khách thuê này?')) return;
-            try {
-                const res = await fetch(`${API_BASE}/renters/${id}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('Không thể xoá khách thuê');
-                log(`Đã xoá khách thuê ID: ${id}`);
-                fetchRenters();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        // --- VEHICLES API CALLS ---
-        async function fetchVehicles() {
-            try {
-                const res = await fetch(`${API_BASE}/vehicles`);
-                if (!res.ok) throw new Error('Không thể tải phương tiện');
-                const vehicles = await res.json();
-                const tbody = document.getElementById('table-vehicles-body');
-                tbody.innerHTML = '';
-                vehicles.forEach(v => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="px-4 py-2">${v.id}</td>
-                            <td class="px-4 py-2 font-semibold">${v.plateNumber}</td>
-                            <td class="px-4 py-2">${v.vehicleType || '-'}</td>
-                            <td class="px-4 py-2">${v.renter ? v.renter.id : '-'}</td>
-                            <td class="px-4 py-2">
-                                <button onclick="deleteVehicle(${v.id})" class="text-red-600 hover:text-red-900 font-medium">Xoá</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                log(`Đã tải ${vehicles.length} phương tiện.`);
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        async function createVehicle(e) {
-            e.preventDefault();
-            const renterId = document.getElementById('vehicleRenterId').value;
-            const payload = {
-                plateNumber: document.getElementById('plateNumber').value,
-                vehicleType: document.getElementById('vehicleType').value,
-                renter: { id: parseInt(renterId) }
-            };
-
-            try {
-                const res = await fetch(`${API_BASE}/vehicles`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) throw new Error('Không thể thêm phương tiện');
-                log('Đăng ký phương tiện thành công!');
-                document.getElementById('form-vehicle').reset();
-                fetchVehicles();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        async function deleteVehicle(id) {
-            if (!confirm('Xoá phương tiện này?')) return;
-            try {
-                const res = await fetch(`${API_BASE}/vehicles/${id}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('Không thể xoá phương tiện');
-                log(`Đã xoá phương tiện ID: ${id}`);
-                fetchVehicles();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        // --- ACCOUNTS API CALLS ---
-        async function fetchAccounts() {
-            try {
-                const res = await fetch(`${API_BASE}/accounts`);
-                if (!res.ok) throw new Error('Không thể tải tài khoản');
-                const accounts = await res.json();
-                const tbody = document.getElementById('table-accounts-body');
-                tbody.innerHTML = '';
-                accounts.forEach(acc => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="px-4 py-2">${acc.id}</td>
-                            <td class="px-4 py-2 font-semibold">${acc.username}</td>
-                            <td class="px-4 py-2">${acc.role}</td>
-                            <td class="px-4 py-2">${acc.renter ? acc.renter.id : '-'}</td>
-                            <td class="px-4 py-2">
-                                <button onclick="deleteAccount(${acc.id})" class="text-red-600 hover:text-red-900 font-medium">Xoá</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                log(`Đã tải ${accounts.length} tài khoản.`);
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        async function createAccount(e) {
-            e.preventDefault();
-            const renterId = document.getElementById('accountRenterId').value;
-            const payload = {
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value,
-                role: document.getElementById('role').value,
-                renter: renterId ? { id: parseInt(renterId) } : null
-            };
-
-            try {
-                const res = await fetch(`${API_BASE}/accounts`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) throw new Error('Không thể tạo tài khoản');
-                log('Tạo tài khoản thành công!');
-                document.getElementById('form-account').reset();
-                fetchAccounts();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        async function deleteAccount(id) {
-            if (!confirm('Xoá tài khoản này?')) return;
-            try {
-                const res = await fetch(`${API_BASE}/accounts/${id}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('Không thể xoá tài khoản');
-                log(`Đã xoá tài khoản ID: ${id}`);
-                fetchAccounts();
-            } catch (err) {
-                log(err.message, true);
-            }
-        }
-
-        // Tự động load dữ liệu tab đầu tiên khi khởi chạy
-        window.onload = () => {
-            fetchRooms();
-        };
-    </script>
 </body>
 </html>

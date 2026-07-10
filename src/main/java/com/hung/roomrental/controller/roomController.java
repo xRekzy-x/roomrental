@@ -25,9 +25,9 @@ public class roomController {
         return roomRepo.save(newRoom);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
-        return roomRepo.findById(id).map(r -> {
+    @DeleteMapping("/{roomNumber}")
+    public ResponseEntity<?> deleteRoom(@PathVariable String roomNumber) {
+        return roomRepo.findById(roomNumber).map(r -> {
             roomRepo.delete(r);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());

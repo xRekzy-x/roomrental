@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Rental - Phương tiện</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/app.js?v=1" defer></script>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <h1>Room Rental Console</h1>
+            <span class="badge">Spring Boot Backend</span>
+        </div>
+    </header>
+
+    <div class="nav-container">
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-link">Phòng trọ</a>
+            <a href="renters.html" class="nav-link">Khách thuê</a>
+            <a href="vehicles.html" class="nav-link active">Phương tiện</a>
+            <a href="accounts.html" class="nav-link">Tài khoản</a>
+        </nav>
+    </div>
+
+    <main>
+        <!-- Danh sách phương tiện rộng 100% -->
+        <div class="card" style="width: 100%;">
+            <div class="card-header-flex">
+                <h2>Danh sách phương tiện</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="openVehicleModal()" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Thêm phương tiện</button>
+                    <button onclick="fetchVehicles()" class="btn btn-secondary">Làm mới</button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Biển số</th>
+                            <th>Loại xe</th>
+                            <th>Chủ xe ID</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-vehicles-body">
+                        <!-- JS load data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Hộp thoại nổi (Modal) cho Phương tiện -->
+        <div id="vehicle-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeVehicleModal()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem;">Thêm phương tiện</h2>
+                <form id="form-vehicle">
+                    <div class="form-group">
+                        <label>Biển số xe *</label>
+                        <input type="text" id="plateNumber" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Loại xe (Ví dụ: Xe máy, Xe đạp)</label>
+                        <input type="text" id="vehicleType" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Số phòng sở hữu phương tiện *</label>
+                        <input type="text" id="vehicleRoomNumber" required class="form-control" placeholder="Ví dụ: 101">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu xe</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <h3>Logs / System Response:</h3>
+            <div id="log-output" class="log-box">Chờ hành động...</div>
+        </div>
+    </footer>
+
+</body>
+</html>

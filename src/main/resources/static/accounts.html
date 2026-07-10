@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Rental - Tài khoản</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/app.js?v=1" defer></script>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <h1>Room Rental Console</h1>
+            <span class="badge">Spring Boot Backend</span>
+        </div>
+    </header>
+
+    <div class="nav-container">
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-link">Phòng trọ</a>
+            <a href="renters.html" class="nav-link">Khách thuê</a>
+            <a href="vehicles.html" class="nav-link">Phương tiện</a>
+            <a href="accounts.html" class="nav-link active">Tài khoản</a>
+        </nav>
+    </div>
+
+    <main>
+        <!-- Danh sách tài khoản rộng 100% -->
+        <div class="card" style="width: 100%;">
+            <div class="card-header-flex">
+                <h2>Danh sách tài khoản</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="openAccountModal()" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Thêm tài khoản</button>
+                    <button onclick="fetchAccounts()" class="btn btn-secondary">Làm mới</button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Vai trò</th>
+                            <th>Khách thuê ID</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-accounts-body">
+                        <!-- JS load data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Hộp thoại nổi (Modal) cho Tài khoản -->
+        <div id="account-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeAccountModal()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem;">Thêm tài khoản</h2>
+                <form id="form-account">
+                    <div class="form-group">
+                        <label>Tên đăng nhập *</label>
+                        <input type="text" id="username" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu *</label>
+                        <input type="password" id="password" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò *</label>
+                        <select id="role" class="form-control">
+                            <option value="RENTER">Khách thuê (RENTER)</option>
+                            <option value="ADMIN">Quản trị viên (ADMIN)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Khách thuê (Renter ID)</label>
+                        <input type="text" id="accountRenterId" class="form-control" placeholder="Bỏ trống nếu là ADMIN">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu tài khoản</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <h3>Logs / System Response:</h3>
+            <div id="log-output" class="log-box">Chờ hành động...</div>
+        </div>
+    </footer>
+
+</body>
+</html>

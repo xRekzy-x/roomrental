@@ -44,7 +44,7 @@ public class account {
     private role role;
 
     @ManyToOne(fetch = FetchType.LAZY)
-      @JoinColumn(name = "renter_id")
+    @JoinColumn(name = "renter_id")
     @JsonIgnoreProperties({"vehicles", "accounts", "room", "hibernateLazyInitializer", "handler"}) // Chỉ lấy thông tin cơ bản của renter
     private renter renter;
 }

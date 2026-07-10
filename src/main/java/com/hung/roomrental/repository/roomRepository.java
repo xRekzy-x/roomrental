@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface roomRepository extends JpaRepository<room, Long> {
+public interface roomRepository extends JpaRepository<room, String> {
     Optional<room> findByRoomNumber(String roomNumber);
 
     List<room> findByStatus(roomStatus status);

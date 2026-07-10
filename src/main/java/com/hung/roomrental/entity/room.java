@@ -4,8 +4,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -31,10 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class room {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "room_number", nullable = false, unique = true)
+    @Column(name = "room_number", nullable = false, unique = true, length = 20)
     private String roomNumber;
 
     @Column(name = "area")
@@ -45,6 +40,15 @@ public class room {
 
     @Column(name = "current_renters")
     private Integer currentRenters;
+
+    @Column(name = "current_vehicles")
+    private Integer currentVehicles;
+
+    @Column(name = "renter_seq_counter")
+    private Integer renterSeqCounter;
+
+    @Column(name = "vehicle_seq_counter")
+    private Integer vehicleSeqCounter;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
