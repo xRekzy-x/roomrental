@@ -39,6 +39,9 @@ public class sepayWebhookController {
     public ResponseEntity<?> handleWebhook(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody sepayWebhookRequest request) {
+    System.out.println("========== WEBHOOK ==========");
+    System.out.println(request);
+    System.out.println("=============================");
 
         System.out.println(">>> Nhận Webhook SePay cho ID giao dịch: " + request.getId());
 
@@ -64,40 +67,42 @@ public class sepayWebhookController {
                 roomNumber = scanValidRoomNumber(request.getContent());
             }
 
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime paymentDateTime = LocalDateTime.parse(request.getTransactionDate(), formatter);
+            
+            // Định dạng tháng xuất hóa đơn (Ví dụ: '2026-07')
+            String billingMonth = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+
+            // 5. Ghi nhận hóa đơn vào DB
+            payment newPayment = payment.builder()
+                    .roomNumber(roomNumber)
+                    .amount(request.getTransferAmount())
+                    .billingMonth(billingMonth)
+                    .paymentDate(paymentDateTime)
+                    .status("PAID")
+                    .transactionId(sepayTxId)
+                    .build();
+
+            paymentRepo.save(newPayment);
+
+
+
             // 4. Nếu phát hiện số phòng hợp lệ và có trong Database
             if (roomNumber != null) {
                 // Định dạng ngày giờ giao dịch nhận được từ SePay
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                LocalDateTime paymentDateTime = LocalDateTime.parse(request.getTransactionDate(), formatter);
-                
-                // Định dạng tháng xuất hóa đơn (Ví dụ: '2026-07')
-                String billingMonth = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
-
-                // 5. Ghi nhận hóa đơn vào DB
-                payment newPayment = payment.builder()
-                        .roomNumber(roomNumber)
-                        .amount(request.getAmount())
-                        .billingMonth(billingMonth)
-                        .paymentDate(paymentDateTime)
-                        .status("PAID")
-                        .transactionId(sepayTxId)
-                        .build();
-
-                paymentRepo.save(newPayment);
-
-                System.out.println("✅ Tự động xác nhận thanh toán thành công " + request.getAmount() + "đ cho phòng: " + roomNumber);
-                return ResponseEntity.ok("Xử lý thành công");
+ 
+                System.out.println("✅ Tự động xác nhận thanh toán thành công " + request.getTransferAmount() + "đ cho phòng: " + roomNumber);
             } else {
                 System.out.println("❌ Không tìm thấy bất kỳ số phòng 3 chữ số nào hợp lệ trong dữ liệu giao dịch: subAccount=" 
                         + request.getSubAccount() + ", content=" + request.getContent());
             }
+            return ResponseEntity.ok("Xử lý thành công");
 
         } catch (Exception e) {
             System.err.println("❌ Lỗi hệ thống khi xử lý Webhook: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi máy chủ nội bộ");
         }
 
-        return ResponseEntity.ok("Nhận thông tin thành công nhưng không tìm thấy mã phòng khớp trong hệ thống.");
     }
 
     /**

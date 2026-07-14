@@ -12,6 +12,7 @@ import java.util.List;
 @RequestMapping("/api/rooms")
 public class roomController {
 
+    
     @Autowired
     private roomRepository roomRepo;
 
@@ -22,6 +23,7 @@ public class roomController {
 
     @PostMapping
     public ResponseEntity<?> createRoom(@RequestBody room newRoom) {
+        
         System.out.println("Received new room data: " + newRoom);   
        // try {
             if (newRoom.getRoomNumber() == null || newRoom.getRoomNumber().isBlank()) {

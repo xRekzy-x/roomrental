@@ -18,7 +18,7 @@ public class payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "room_number", nullable = false, length = 20)
+    @Column(name = "room_number", nullable = true, length = 20)
     private String roomNumber;
 
     @Column(name = "amount", nullable = false)

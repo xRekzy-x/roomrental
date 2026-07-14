@@ -1,6 +1,6 @@
 CREATE TABLE payment (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    room_number VARCHAR(20) NOT NULL,
+    room_number VARCHAR(20),
     amount DECIMAL(12,2) NOT NULL,
     billing_month VARCHAR(7) NOT NULL, -- Định dạng: 'YYYY-MM' (Ví dụ: '2026-07')
     payment_date DATETIME NOT NULL,

@@ -628,10 +628,15 @@ async function fetchPayments() {
             const date = new Date(p.paymentDate);
             const formattedDate = date.toLocaleString('vi-VN');
             
+            // Logic kiểm tra hiển thị số phòng
+            const roomDisplay = p.roomNumber 
+                ? `Phòng ${p.roomNumber}` 
+                : `<span class="status-tag maintenance" style="font-size: 0.75rem; border-radius: 4px; font-weight: bold; text-transform: uppercase;">Chưa gán phòng</span>`;
+            
             tbody.innerHTML += `
                 <tr>
                     <td style="font-family: monospace; font-weight: 600; color: var(--text-muted);">${p.transactionId}</td>
-                    <td style="font-weight: bold; font-family: monospace;">Phòng ${p.roomNumber}</td>
+                    <td style="font-weight: bold; font-family: monospace;">${roomDisplay}</td>
                     <td style="color: var(--success); font-weight: bold;">+${parseFloat(p.amount).toLocaleString()} đ</td>
                     <td style="font-family: monospace; font-weight: 600;">Tháng ${p.billingMonth.substring(5)}/${p.billingMonth.substring(0,4)}</td>
                     <td>${formattedDate}</td>
