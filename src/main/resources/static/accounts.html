@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Rental - Tài khoản</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/app.js?v=1" defer></script>
+    <script src="/js/app.js?v=3"></script>
+
 </head>
 <body>
 
@@ -22,6 +23,7 @@
             <a href="renters.html" class="nav-link">Khách thuê</a>
             <a href="vehicles.html" class="nav-link">Phương tiện</a>
             <a href="accounts.html" class="nav-link active">Tài khoản</a>
+            <a href="payments.html" class="nav-link">Thanh toán</a> 
         </nav>
     </div>
 
@@ -78,6 +80,7 @@
                         <label>Khách thuê (Renter ID)</label>
                         <input type="text" id="accountRenterId" class="form-control" placeholder="Bỏ trống nếu là ADMIN">
                     </div>
+                    <div id="form-account-error" class="form-error" role="alert"></div>
                     <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu tài khoản</button>
                 </form>
             </div>

@@ -46,7 +46,7 @@ public class renter {
     @Column(name = "cccd_number", nullable = false, unique = true, length = 20)
     private String cccdNumber;
 
-    @Column(name = "phone", length = 15)
+    @Column(name = "phone", length = 15, unique = true)
     private String phone;
 
     @Column(name = "dob")

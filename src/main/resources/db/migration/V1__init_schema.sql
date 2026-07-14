@@ -13,7 +13,7 @@ CREATE TABLE renter (
     id VARCHAR(30) PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     cccd_number VARCHAR(20) NOT NULL UNIQUE,
-    phone VARCHAR(15),
+    phone VARCHAR(15) UNIQUE,
     dob DATE,
     room_number VARCHAR(20),
     CONSTRAINT fk_renter_room FOREIGN KEY (room_number) REFERENCES room(room_number)
@@ -149,5 +149,87 @@ BEGIN
     SET current_vehicles = GREATEST(0, current_vehicles -1)
     WHERE room_number = OLD.room_number;
 END$$
+
+CREATE TRIGGER after_renter_update
+BEFORE UPDATE ON renter
+FOR EACH ROW
+BEGIN
+    DECLARE next_seq INT;
+    INSERT INTO room_seq_pool (room_number, seq_no) 
+    VALUES (OLD.room_number, CAST(SUBSTRING_INDEX(OLD.id, '-', -1) AS UNSIGNED));
+    SELECT MIN(seq_no) INTO next_seq
+    FROM room_seq_pool
+    WHERE room_number = NEW.room_number;
+
+    IF next_seq IS NOT NULL THEN
+        DELETE FROM room_seq_pool
+        WHERE room_number = NEW.room_number AND seq_no = next_seq;
+    ELSE
+        SELECT renter_seq_counter + 1 INTO next_seq
+        FROM room
+        WHERE room_number = NEW.room_number
+        FOR UPDATE;
+
+        UPDATE room
+        SET renter_seq_counter = next_seq
+        WHERE room_number = NEW.room_number;
+
+    END IF;
+
+    -- DELETE FROM renter
+    -- WHERE id = OLD.ID;
+
+    UPDATE room
+    SET current_renters = GREATEST(0, current_renters - 1)
+    WHERE room_number = OLD.room_number;
+
+    UPDATE room
+    SET current_renters = current_renters + 1
+    WHERE room_number = NEW.room_number;
+
+    SET NEW.id = CONCAT(NEW.room_number, '-', next_seq);
+END$$
+
+CREATE TRIGGER after_vehicle_update
+BEFORE UPDATE ON vehicle
+FOR EACH ROW
+BEGIN
+    DECLARE next_v_seq INT;
+    INSERT INTO room_vehicle_pool (room_number, seq_no)
+    VALUES (OLD.room_number, CAST(SUBSTRING_INDEX(OLD.id, '-', -1) AS UNSIGNED));
+
+    SELECT MIN(seq_no) INTO next_v_seq
+    FROM room_vehicle_pool
+    WHERE room_number = NEW.room_number;
+
+    IF next_v_seq IS NOT NULL THEN
+        DELETE FROM room_vehicle_pool
+        WHERE room_number = NEW.room_number AND seq_no = next_v_seq;
+    ELSE
+        SELECT vehicle_seq_counter + 1 INTO next_v_seq
+        FROM room
+        WHERE room_number = NEW.room_number
+        FOR UPDATE;
+
+        UPDATE room
+        SET vehicle_seq_counter = next_v_seq
+        WHERE room_number = NEW.room_number;
+
+    END IF;
+
+    -- DELETE FROM vehicle
+    -- WHERE id = OLD.ID;
+
+    UPDATE room
+    SET current_vehicles = GREATEST(0, current_vehicles - 1)
+    WHERE room_number = OLD.room_number;
+
+    UPDATE room
+    SET current_vehicles = current_vehicles + 1
+    WHERE room_number = NEW.room_number;
+
+    SET NEW.id = CONCAT(NEW.room_number, '-', next_v_seq);
+END$$
+
 
 DELIMITER ;

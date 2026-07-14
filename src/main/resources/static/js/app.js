@@ -20,7 +20,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('table-renters-body')) fetchRenters();
     if (document.getElementById('table-vehicles-body')) fetchVehicles();
     if (document.getElementById('table-accounts-body')) fetchAccounts();
+    if (document.getElementById('table-payments-body')) fetchPayments(); 
 });
+
+function errorHandler(err) {
+    let message = err.message;  
+    if (message.includes("Duplicate")) {
+        if (message.includes("username")) 
+            message = "Tên đăng nhập đã tồn tại!"; 
+        else if (message.includes("renter.cccd_number")) 
+            message = "CCCD đã tồn tại!";
+        else if(message.includes("renter.phone"))
+            message = "Số điện thoại đã tồn tại!";
+        else if (message.includes("vehicle.plate_number")) 
+            message = "Biển số xe đã tồn tại!";
+        else
+            message = "Dữ liệu đã tồn tại!";
+    }
+    return message;
+}
 
 function bindFormEvents() {
     const formRoom = document.getElementById('form-room');
@@ -36,41 +54,178 @@ function bindFormEvents() {
     if (formAccount) formAccount.addEventListener('submit', createAccount);
 }
 
+function showFormError(formId, message) {
+    const errorBox = document.getElementById(`${formId}-error`);
+    if (!errorBox) return;
+    errorBox.textContent = message || '';
+    errorBox.style.display = message ? 'block' : 'none';
+}
+
+function clearFormError(formId) {
+    showFormError(formId, '');
+}
+
 // --- ĐIỀU KHIỂN CÁC HỘP THOẠI NỔI (MODAL CONTROLLERS) ---
 function openRoomModal() {
     const modal = document.getElementById('room-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        clearFormError('form-room');
+        modal.style.display = 'flex';
+    }
 }
 function closeRoomModal() {
     const modal = document.getElementById('room-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        clearFormError('form-room');
+        modal.style.display = 'none';
+    }
+}
+
+async function openEditRenterModal(id){
+    const modal = document.getElementById('editRenterModal');
+    if (modal) {
+        clearFormError('edit-form-renter');
+        modal.style.display = 'flex';
+    }
+
+    const res = await fetch(`${API_BASE}/renters`);
+
+    const renters = await res.json();
+
+    const renter = renters.find(r=>r.id===id);
+
+    if(!renter) return;
+
+    document.getElementById("editRenterId").value=id;
+
+    document.getElementById("editFullName").value=renter.fullName;
+
+    document.getElementById("editPhone").value=renter.phone;
+
+    document.getElementById("editRoomNumber").value=renter.roomNumber;
+
+    document.getElementById("editRenterModal")
+            .classList.remove("hidden");
+}
+
+function closeEditRenter(){
+    const modal = document.getElementById('editRenterModal');
+    if (modal) {
+        clearFormError('edit-form-renter');
+        modal.style.display = 'none';
+    }
+}
+
+async function openEditRoomModal(roomNumber){
+    const modal = document.getElementById('editRoomModal');
+    if (modal) {
+        clearFormError('edit-form-room');
+        modal.style.display = 'flex';
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/rooms`);
+        if (!res.ok) throw new Error('Không thể tải thông tin phòng');
+        const rooms = await res.json();
+        
+        // Tìm phòng theo thuộc tính roomNumber đúng thay vì .number
+        const room = rooms.find(r => r.roomNumber === roomNumber);
+
+        if (!room) {
+            log('Không tìm thấy thông tin phòng cần chỉnh sửa', true);
+            return;
+        }
+
+        // Đổ dữ liệu hiện tại vào Form chỉnh sửa
+        document.getElementById("editRoomNumber").value = room.roomNumber;
+        document.getElementById("editRoomArea").value = room.area || '';
+        document.getElementById("editRoomPrice").value = room.price || '';
+        document.getElementById("editRoomStatus").value = room.status || 'AVAILABLE';
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+function closeEditRoom(){
+    const modal = document.getElementById('editRoomModal');
+    if (modal) {
+        clearFormError('edit-form-room');
+        modal.style.display = 'none';
+    }
+}
+async function saveRoom() {
+    clearFormError('edit-form-room');
+    const roomNumber = document.getElementById('editRoomNumber').value;
+    const payload = {
+        area: document.getElementById('editRoomArea').value ? parseFloat(document.getElementById('editRoomArea').value) : null,
+        price: parseFloat(document.getElementById('editRoomPrice').value),
+        status: document.getElementById('editRoomStatus').value
+    };
+
+    try {
+        const res = await fetch(`${API_BASE}/rooms/${roomNumber}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || 'Không thể cập nhật thông tin phòng');
+        }
+
+        log(`Cập nhật thành công thông tin phòng ${roomNumber}!`);
+        closeEditRoom();
+        fetchRooms(); // Tải lại danh sách phòng
+    } catch (err) {
+        showFormError('edit-form-room', err.message);
+        log(err.message, true);
+    }
 }
 
 function openRenterModal() {
     const modal = document.getElementById('renter-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        clearFormError('form-renter');
+        modal.style.display = 'flex';
+    }
 }
 function closeRenterModal() {
     const modal = document.getElementById('renter-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        clearFormError('form-renter');
+        modal.style.display = 'none';
+    }
 }
 
 function openVehicleModal() {
     const modal = document.getElementById('vehicle-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        clearFormError('form-vehicle');
+        modal.style.display = 'flex';
+    }
 }
 function closeVehicleModal() {
     const modal = document.getElementById('vehicle-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        clearFormError('form-vehicle');
+        modal.style.display = 'none';
+    }
 }
 
 function openAccountModal() {
     const modal = document.getElementById('account-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        clearFormError('form-account');
+        modal.style.display = 'flex';
+    }
 }
 function closeAccountModal() {
     const modal = document.getElementById('account-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        clearFormError('form-account');
+        modal.style.display = 'none';
+    }
 }
 
 // Đóng bất kỳ Modal nào khi click ra vùng trống bên ngoài
@@ -79,11 +234,15 @@ window.addEventListener('click', (e) => {
     const renterModal = document.getElementById('renter-modal');
     const vehicleModal = document.getElementById('vehicle-modal');
     const accountModal = document.getElementById('account-modal');
+    const editRoomModal = document.getElementById('editRoomModal');
+    const editRenterModal = document.getElementById('editRenterModal');
 
     if (e.target === roomModal) closeRoomModal();
     if (e.target === renterModal) closeRenterModal();
     if (e.target === vehicleModal) closeVehicleModal();
     if (e.target === accountModal) closeAccountModal();
+    if (e.target === editRoomModal) closeEditRoom();
+    if (e.target === editRenterModal) closeEditRenter();
 });
 
 
@@ -107,6 +266,7 @@ async function fetchRooms() {
                     <td><span class="status-tag ${statusClass}">${room.status}</span></td>
                     <td>
                         <button onclick="deleteRoom('${room.roomNumber}')" class="btn btn-danger">Xoá</button>
+                        <button onclick="openEditRoomModal('${room.roomNumber}')" class="btn btn-warning">Sửa</button>
                     </td>
                 </tr>
             `;
@@ -119,25 +279,32 @@ async function fetchRooms() {
 
 async function createRoom(e) {
     e.preventDefault();
+    clearFormError('form-room');
+
     const payload = {
-        roomNumber: document.getElementById('roomNumber').value,
+        roomNumber: document.getElementById('roomNumber').value.trim(),
         area: document.getElementById('roomArea').value ? parseFloat(document.getElementById('roomArea').value) : null,
         price: parseFloat(document.getElementById('roomPrice').value),
         status: document.getElementById('roomStatus').value
     };
-
+    console.log(`${API_BASE}/rooms`);
     try {
         const res = await fetch(`${API_BASE}/rooms`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Không thể tạo phòng mới');
+        if (!res.ok) {
+            const message = await res.text();
+            throw new Error(message || 'Không thể tạo phòng mới');
+        }
         log('Tạo phòng mới thành công!');
         document.getElementById('form-room').reset();
         closeRoomModal();
         fetchRooms();
     } catch (err) {
+        let message = errorHandler(err);
+        showFormError('form-room', err.message);
         log(err.message, true);
     }
 }
@@ -173,6 +340,7 @@ async function fetchRenters() {
                     <td style="font-weight: bold; font-family: monospace;">${renter.roomNumber || '-'}</td>
                     <td>
                         <button onclick="deleteRenter('${renter.id}')" class="btn btn-danger">Xoá</button>
+                        <button onclick="openEditRenterModal('${renter.id}')" class="btn btn-warning">Sửa</button>
                     </td>
                 </tr>
             `;
@@ -183,59 +351,16 @@ async function fetchRenters() {
     }
 }
 
-// async function createRenter(e) {
-//     e.preventDefault();
-//     const roomNumber = document.getElementById('renterRoomNumber').value.trim();
-//     if (!roomNumber) {
-//         log('Vui lòng nhập số phòng trước khi lưu khách thuê.', true);
-//         return;
-//     }
-
-//     const payload = {
-//         fullName: document.getElementById('renterName').value.trim(),
-//         cccdNumber: document.getElementById('renterCccd').value.trim(),
-//         phone: document.getElementById('renterPhone').value.trim() || null,
-//         dob: document.getElementById('renterDob').value || null,
-//         roomNumber: roomNumber,
-//         // room: { roomNumber: roomNumber }
-//     };
-//     // renter (full_name, cccd_number, phone, dob, room_number)
-//     try {
-//         const res = await fetch(`${API_BASE}/renters`, {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify(payload)
-//         });
-// // INSERT INTO renter (full_name, cccd_number, phone, dob, room_number) VALUES
-//         let errorMessage = 'Không thể thêm khách thuê mới';
-//         if (!res.ok) {
-//             try {
-//                 const data = await res.json();
-//                 if (data && typeof data === 'string') {
-//                     errorMessage = data;
-//                 } else if (data && data.message) {
-//                     errorMessage = data.message;
-//                 }
-//             } catch {
-//                 // Ignore JSON parse issue and keep the default message.
-//             }
-//             throw new Error(errorMessage);
-//         }
-
-//         log('Thêm khách thuê thành công!');
-//         document.getElementById('form-renter').reset();
-//         closeRenterModal();
-//         fetchRenters();
-//     } catch (err) {
-//         log(err.message, true);
-//     }
-// }
 
 async function createRenter(e) {
     e.preventDefault();
+    clearFormError('form-renter');
+
     const roomNumber = document.getElementById('renterRoomNumber').value.trim();
     if (!roomNumber) {
-        log('Vui lòng nhập số phòng trước khi lưu khách thuê.', true);
+        const message = 'Vui lòng nhập số phòng trước khi lưu khách thuê.';
+        showFormError('form-renter', message);
+        log(message, true);
         return;
     }
 
@@ -257,7 +382,7 @@ async function createRenter(e) {
         let errorMessage = 'Không thể thêm khách thuê mới';
         if (!res.ok) {
             try {
-                const data = await res.text(); // Chuyển sang đọc text để xử lý chuỗi phản hồi thô từ Controller tốt hơn
+                const data = await res.text();
                 if (data) errorMessage = data;
             } catch {
                 // Ignore parse issue
@@ -270,7 +395,9 @@ async function createRenter(e) {
         closeRenterModal();
         fetchRenters();
     } catch (err) {
-        log(err.message, true);
+        let message = errorHandler(err);
+        showFormError('form-renter', message);
+        log(message, true);
     }
 }
 
@@ -282,6 +409,36 @@ async function deleteRenter(id) {
         log(`Đã xoá khách thuê ID: ${id}`);
         fetchRenters();
     } catch (err) {
+        log(err.message, true);
+    }
+}
+
+async function saveRenter() {
+    clearFormError('edit-form-renter');
+    const id = document.getElementById('editRenterId').value;
+    const payload = {
+        fullName: document.getElementById('editFullName').value.trim(),
+        phone: document.getElementById('editPhone').value.trim() || null,
+        roomNumber: document.getElementById('editRoomNumber').value.trim() || null
+    };
+
+    try {
+        const res = await fetch(`${API_BASE}/renters/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || 'Không thể cập nhật thông tin khách thuê');
+        }
+
+        log(`Cập nhật thành công thông tin khách thuê ${id}!`);
+        closeEditRenter();
+        fetchRenters();
+    } catch (err) {
+        showFormError('edit-form-renter', err.message);
         log(err.message, true);
     }
 }
@@ -316,9 +473,13 @@ async function fetchVehicles() {
 
 async function createVehicle(e) {
     e.preventDefault();
+    clearFormError('form-vehicle');
+
     const roomNumber = document.getElementById('vehicleRoomNumber').value.trim();
     if (!roomNumber) {
-        log('Vui lòng nhập số phòng trước khi đăng ký phương tiện.', true);
+        const message = 'Vui lòng nhập số phòng trước khi đăng ký phương tiện.';
+        showFormError('form-vehicle', message);
+        log(message, true);
         return;
     }
 
@@ -349,7 +510,9 @@ async function createVehicle(e) {
         closeVehicleModal();
         fetchVehicles();
     } catch (err) {
-        log(err.message, true); // In ra chính xác thông báo lỗi từ Backend lên màn hình log đen
+        let message = errorHandler(err);
+        showFormError('form-vehicle', message);
+        log(message, true);
     }
 }
 
@@ -395,6 +558,8 @@ async function fetchAccounts() {
 
 async function createAccount(e) {
     e.preventDefault();
+    clearFormError('form-account');
+
     const renterId = document.getElementById('accountRenterId').value;
     const payload = {
         username: document.getElementById('username').value,
@@ -409,13 +574,20 @@ async function createAccount(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Không thể tạo tài khoản');
+        if (!res.ok) {
+            const message = await res.text();
+            throw new Error(message || 'Không thể tạo tài khoản');
+        }
         log('Tạo tài khoản thành công!');
         document.getElementById('form-account').reset();
         closeAccountModal();
         fetchAccounts();
     } catch (err) {
-        log(err.message, true);
+        let message = errorHandler(err);
+
+        showFormError('form-account', message);
+ 
+        log(message, true);
     }
 }
 
@@ -426,6 +598,56 @@ async function deleteAccount(id) {
         if (!res.ok) throw new Error('Không thể xoá tài khoản');
         log(`Đã xoá tài khoản ID: ${id}`);
         fetchAccounts();
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+
+// PAYMENT SEPAY
+// --- QUẢN LÝ LỊCH SỬ THANH TOÁN (PAYMENTS API) ---
+async function fetchPayments() {
+    try {
+        const res = await fetch(`${API_BASE}/payments`);
+        if (!res.ok) throw new Error('Không thể tải lịch sử giao dịch thanh toán.');
+        const payments = await res.json();
+        
+        const tbody = document.getElementById('table-payments-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        
+        let totalRevenue = 0;
+        
+        // Sắp xếp các thanh toán mới nhất hiển thị lên đầu
+        payments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+
+        payments.forEach(p => {
+            totalRevenue += p.amount;
+            
+            // Định dạng hiển thị ngày giờ (ví dụ: 14/07/2026, 19:15:30)
+            const date = new Date(p.paymentDate);
+            const formattedDate = date.toLocaleString('vi-VN');
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-family: monospace; font-weight: 600; color: var(--text-muted);">${p.transactionId}</td>
+                    <td style="font-weight: bold; font-family: monospace;">Phòng ${p.roomNumber}</td>
+                    <td style="color: var(--success); font-weight: bold;">+${parseFloat(p.amount).toLocaleString()} đ</td>
+                    <td style="font-family: monospace; font-weight: 600;">Tháng ${p.billingMonth.substring(5)}/${p.billingMonth.substring(0,4)}</td>
+                    <td>${formattedDate}</td>
+                    <td><span class="status-tag available" style="font-size: 0.7rem; letter-spacing: 0.05em;">${p.status}</span></td>
+                </tr>
+            `;
+        });
+        
+        // Cập nhật các thẻ thông số thống kê ở đầu trang
+        const revenueEl = document.getElementById('stat-total-revenue');
+        if (revenueEl) revenueEl.textContent = `${totalRevenue.toLocaleString()} đ`;
+        
+        const txEl = document.getElementById('stat-total-tx');
+        if (txEl) txEl.textContent = payments.length;
+        
+        log(`Đã cập nhật thành công ${payments.length} hóa đơn thanh toán.`);
     } catch (err) {
         log(err.message, true);
     }

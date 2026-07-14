@@ -166,6 +166,19 @@ main {
     border-color: var(--primary);
 }
 
+/* Inline form errors */
+.form-error {
+    display: none;
+    margin-bottom: 1rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    background-color: var(--danger-bg);
+    color: var(--danger);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
 /* Buttons */
 .btn {
     display: inline-flex;
@@ -213,11 +226,21 @@ main {
     background-color: #fca5a5;
 }
 
-/* Tables */
-.table-wrapper {
-    overflow-x: auto;
-    border: 1px solid #f3f4f6;
-    border-radius: 8px;
+.btn-warning {
+    background-color: var(--warning-bg);
+    color: var(--warning);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.btn-warning:hover {
+    background-color: #fde047;
+}
+
+/* Khoảng cách nhỏ giữa các nút trong bảng */
+td .btn {
+    margin-right: 0.25rem;
 }
 
 table {

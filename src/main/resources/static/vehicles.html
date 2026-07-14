@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Rental - Phương tiện</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/app.js?v=1" defer></script>
+    <script src="/js/app.js?v=3"></script>
+
 </head>
 <body>
 
@@ -22,6 +23,7 @@
             <a href="renters.html" class="nav-link">Khách thuê</a>
             <a href="vehicles.html" class="nav-link active">Phương tiện</a>
             <a href="accounts.html" class="nav-link">Tài khoản</a>
+            <a href="payments.html" class="nav-link">Thanh toán</a> 
         </nav>
     </div>
 
@@ -71,6 +73,7 @@
                         <label>Số phòng sở hữu phương tiện *</label>
                         <input type="text" id="vehicleRoomNumber" required class="form-control" placeholder="Ví dụ: 101">
                     </div>
+                    <div id="form-vehicle-error" class="form-error" role="alert"></div>
                     <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu xe</button>
                 </form>
             </div>

@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Rental - Quản lý phòng</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/app.js?v=1" defer></script>
+    <script src="/js/app.js?v=3"></script>
+
 </head>
 <body>
 
@@ -22,6 +23,7 @@
             <a href="renters.html" class="nav-link">Khách thuê</a>
             <a href="vehicles.html" class="nav-link">Phương tiện</a>
             <a href="accounts.html" class="nav-link">Tài khoản</a>
+            <a href="payments.html" class="nav-link">Thanh toán</a> 
         </nav>
     </div>
 
@@ -81,11 +83,46 @@
                             <option value="MAINTENANCE">Bảo trì (MAINTENANCE)</option>
                         </select>
                     </div>
+                    <div id="form-room-error" class="form-error" role="alert"></div>
                     <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu phòng</button>
                 </form>
             </div>
         </div>
+
+        <!-- Hộp thoại nổi (Modal) chứa Form sửa phòng -->
+        <div id="editRoomModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeEditRoom()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem;">Chỉnh sửa phòng</h2>
+                <form id="edit-form-room" onsubmit="event.preventDefault(); saveRoom();">
+                    <div class="form-group">
+                        <label>Số phòng</label>
+                        <input type="text" id="editRoomNumber" readonly class="form-control" style="background-color: #f3f4f6; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>Diện tích (m²)</label>
+                        <input type="number" step="0.1" id="editRoomArea" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Giá phòng (VNĐ) *</label>
+                        <input type="number" id="editRoomPrice" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Trạng thái</label>
+                        <select id="editRoomStatus" class="form-control">
+                            <option value="AVAILABLE">Trống (AVAILABLE)</option>
+                            <option value="OCCUPIED">Đã thuê (OCCUPIED)</option>
+                            <option value="MAINTENANCE">Bảo trì (MAINTENANCE)</option>
+                        </select>
+                    </div>
+                    <div id="edit-form-room-error" class="form-error" role="alert"></div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu thay đổi</button>
+                </form>
+            </div>
+        </div>
     </main>
+
+   
 
     <footer>
         <div class="footer-container">

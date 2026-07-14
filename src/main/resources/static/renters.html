@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Rental - Khách thuê</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/app.js?v=1" defer></script>
+    <script src="/js/app.js?v=3"></script>
 </head>
 <body>
 
@@ -22,6 +22,7 @@
             <a href="renters.html" class="nav-link active">Khách thuê</a>
             <a href="vehicles.html" class="nav-link">Phương tiện</a>
             <a href="accounts.html" class="nav-link">Tài khoản</a>
+            <a href="payments.html" class="nav-link">Thanh toán</a> 
         </nav>
     </div>
 
@@ -57,7 +58,7 @@
         <!-- Hộp thoại nổi (Modal) cho Khách thuê -->
         <div id="renter-modal" class="modal">
             <div class="modal-content">
-                <span class="close-btn" onclick="closeRenterModal()">&times;</span>
+                <span class="close-btn" onclick="closeRenterModal()">&times</span>
                 <h2 class="card-title" style="margin-bottom: 1rem;">Thêm khách thuê</h2>
                 <form id="form-renter">
                     <div class="form-group">
@@ -80,11 +81,40 @@
                         <label>Số phòng *</label>
                         <input type="text" id="renterRoomNumber" required class="form-control" placeholder="Ví dụ: 101">
                     </div>
+                    <div id="form-renter-error" class="form-error" role="alert"></div>
                     <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu khách thuê</button>
                 </form>
             </div>
         </div>
     </main>
+    <div id="editRenterModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeEditRenter()">&times;</span>
+            <h2 class="card-title" style="margin-bottom: 1rem;">Chỉnh sửa khách thuê</h2>
+
+            <input type="hidden" id="editRenterId">
+
+            <div class="form-group">
+                <label>Họ và tên</label>
+                <input id="editFullName" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Số điện thoại</label>
+                <input id="editPhone" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Số phòng</label>
+                <input id="editRoomNumber" class="form-control">
+            </div>
+
+            <div id="edit-form-renter-error" class="form-error" role="alert"></div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button onclick="saveRenter()" type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu khách thuê</button>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <div class="footer-container">

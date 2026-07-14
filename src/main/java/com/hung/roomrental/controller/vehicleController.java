@@ -44,7 +44,7 @@ public class vehicleController {
             if (targetRoomNumber == null || targetRoomNumber.isBlank()) {
                 return ResponseEntity.badRequest().body("Vui lòng cung cấp số phòng sở hữu phương tiện.");
             }
-
+            
             // 3. Tìm kiếm thực thể phòng trong Database
             room existingRoom = roomRepo.findById(targetRoomNumber).orElse(null);
             if (existingRoom == null) {
@@ -73,6 +73,29 @@ public class vehicleController {
         return vehicleRepo.findById(id).map(v -> {
             vehicleRepo.delete(v);
             return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<vehicle> updateVehicle(
+            @PathVariable String id,
+            @RequestBody vehicle updated){
+
+        return vehicleRepo.findById(id).map(v->{
+
+            v.setPlateNumber(updated.getPlateNumber());
+            v.setVehicleType(updated.getVehicleType());
+
+            if(updated.getRoomNumber()!=null){
+
+                room room=roomRepo.findById(updated.getRoomNumber())
+                        .orElseThrow();
+
+                v.setRoom(room);
+            }
+
+            return ResponseEntity.ok(vehicleRepo.save(v));
+
         }).orElse(ResponseEntity.notFound().build());
     }
 }

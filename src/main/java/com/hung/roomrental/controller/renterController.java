@@ -33,7 +33,7 @@ public class renterController {
         return renters;
     }
 
-       @PostMapping
+    @PostMapping
     public ResponseEntity<?> createRenter(@RequestBody renter newRenter) {
         try {
             // 1. Xác định số phòng được gửi từ Client lên
@@ -77,49 +77,41 @@ public class renterController {
             return ResponseEntity.status(500).body("Lỗi máy chủ: " + e.getMessage());
         }
     }
-    // @PostMapping
-    // public ResponseEntity<?> createRenter(@RequestBody renter newRenter) {
-    //     try {
-    //         if (newRenter == null) {
-    //             return ResponseEntity.badRequest().body(Map.of("message", "Dữ liệu khách thuê trống."));
-    //         }
-
-    //         String roomNumber = newRenter.getRoomNumber();
-    //         if (roomNumber != null) {
-    //             roomNumber = roomNumber.trim();
-    //         }
-
-    //         if (roomNumber == null || roomNumber.isBlank()) {
-    //             return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng nhập số phòng."));
-    //         }
-
-    //         room existingRoom = roomRepo.findById(roomNumber).orElse(null);
-    //         if (existingRoom == null) {
-    //             return ResponseEntity.badRequest().body(Map.of("message", "Phòng " + roomNumber + " không tồn tại."));
-    //         }
-
-    //         newRenter.setRoom(existingRoom);
-    //         newRenter.setRoomNumber(roomNumber);
-
-    //         if (newRenter.getId() == null || newRenter.getId().isBlank()) {
-    //             newRenter.setId(UUID.randomUUID().toString().replace("-", "").substring(0, 20));
-    //         }
-
-    //         renter savedRenter = renterRepo.save(newRenter);
-    //         if (savedRenter.getRoom() != null) {
-    //             savedRenter.setRoomNumber(savedRenter.getRoom().getRoomNumber());
-    //         }
-    //         return ResponseEntity.ok(savedRenter);
-    //     } catch (Exception ex) {
-    //         return ResponseEntity.status(500).body(Map.of("message", ex.getClass().getSimpleName() + ": " + ex.getMessage()));
-    //     }
-    // }
-
+   
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRenter(@PathVariable String id) {
         return renterRepo.findById(id).map(r -> {
             renterRepo.delete(r);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateRenter(
+            @PathVariable String id,
+            @RequestBody renter updated) {
+
+        try {
+
+            renter r = renterRepo.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khách thuê."));
+
+            r.setFullName(updated.getFullName());
+            r.setPhone(updated.getPhone());
+            r.setDob(updated.getDob());
+
+            if (updated.getRoomNumber() != null) {
+                room room = roomRepo.findById(updated.getRoomNumber())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng."));
+                r.setRoom(room);
+            }
+
+            renterRepo.saveAndFlush(r);
+
+            return ResponseEntity.ok(r);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi máy chủ: " + e.getMessage());
+        }
     }
 }

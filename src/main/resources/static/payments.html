@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Rental - Lịch sử thanh toán</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/app.js?v=3"></script>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <h1>Room Rental Console</h1>
+            <span class="badge">Spring Boot Backend</span>
+        </div>
+    </header>
+
+    <div class="nav-container">
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-link">Phòng trọ</a>
+            <a href="renters.html" class="nav-link">Khách thuê</a>
+            <a href="vehicles.html" class="nav-link">Phương tiện</a>
+            <a href="accounts.html" class="nav-link">Tài khoản</a>
+            <a href="payments.html" class="nav-link active">Thanh toán</a>
+        </nav>
+    </div>
+
+    <main>
+        <!-- Khung thống kê nhanh doanh thu -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="card" style="border-left: 5px solid var(--success); background-color: #f0fdf4;">
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Tổng doanh thu thực tế</h3>
+                <p id="stat-total-revenue" style="font-size: 1.8rem; font-weight: 800; color: var(--success); margin-top: 0.5rem;">0 đ</p>
+            </div>
+            <div class="card" style="border-left: 5px solid var(--primary); background-color: #eff6ff;">
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Tổng số lượt thanh toán</h3>
+                <p id="stat-total-tx" style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem;">0</p>
+            </div>
+        </div>
+
+        <!-- Bảng danh sách lịch sử thanh toán -->
+        <div class="card" style="width: 100%;">
+            <div class="card-header-flex">
+                <h2>Nhật ký thanh toán tự động (SePay)</h2>
+                <button onclick="fetchPayments()" class="btn btn-secondary">Làm mới</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Giao dịch ID</th>
+                            <th>Số phòng</th>
+                            <th>Số tiền đã đóng</th>
+                            <th>Tháng thanh toán</th>
+                            <th>Ngày giờ nhận tiền</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-payments-body">
+                        <!-- Dữ liệu JS sẽ tự động điền vào đây -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <h3>Logs / System Response:</h3>
+            <div id="log-output" class="log-box">Chờ hành động...</div>
+        </div>
+    </footer>
+
+</body>
+</html>
