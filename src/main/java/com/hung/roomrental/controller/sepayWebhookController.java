@@ -49,9 +49,9 @@ public class sepayWebhookController {
     public ResponseEntity<?> handleWebhook(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody sepayWebhookRequest request) {
-
+        
         System.out.println(">>> Nhận Webhook SePay cho ID giao dịch: " + request.getId());
-
+        System.out.println(">>> Nội dung Webhook: " + request.getContent() );
         // 1. Xác thực bảo mật API Key
         if (authHeader == null || !authHeader.contains(API_KEY)) {
             System.out.println("❌ Cảnh báo: Yêu cầu Webhook không chứa API Key hợp lệ.");
@@ -88,6 +88,7 @@ public class sepayWebhookController {
                     .paymentDate(paymentDateTime)
                     .status("PAID")
                     .transactionId(sepayTxId)
+                    .content(request.getContent())
                     .build();
 
             paymentRepo.save(newPayment);
@@ -122,7 +123,7 @@ public class sepayWebhookController {
         }
 
         // Biểu thức chính quy quét tìm các cụm có đúng 3 chữ số liên tiếp
-        Pattern pattern = Pattern.compile("\\d{3}");
+        Pattern pattern = Pattern.compile("(?<!\\\\d)\\\\d{3}(?!\\\\d)");
         Matcher matcher = pattern.matcher(text);
 
         // Duyệt qua tất cả các cụm 3 số tìm thấy được từ trái qua phải

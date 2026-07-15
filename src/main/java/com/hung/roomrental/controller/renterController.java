@@ -55,11 +55,17 @@ public class renterController {
             }
 
             // 3. Sử dụng Native Query để ghi trực tiếp xuống DB (bỏ qua cơ chế quản lý ID tự động của Hibernate)
+            // Convert dob to string (YYYY-MM-DD) for native query parameter binding
+            String dobStr = null;
+            if (newRenter.getDob() != null) {
+                dobStr = newRenter.getDob().toString();
+            }
+
             renterRepo.insertRenterNative(
                 newRenter.getFullName(),
                 newRenter.getCccdNumber(),
                 newRenter.getPhone(),
-                newRenter.getDob(),
+                dobStr,
                 targetRoomNumber
             );
 

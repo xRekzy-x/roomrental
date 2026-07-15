@@ -687,7 +687,7 @@ async function fetchPayments() {
                     <td style="color: var(--success); font-weight: bold;">+${parseFloat(p.amount).toLocaleString()} đ</td>
                     <td style="font-family: monospace; font-weight: 600;">Tháng ${p.billingMonth.substring(5)}/${p.billingMonth.substring(0,4)}</td>
                     <td>${formattedDate}</td>
-                    <td><span class="status-tag available" style="font-size: 0.7rem; letter-spacing: 0.05em;">${p.status}</span></td>
+                    <td><span class="status-tag available" style="font-size: 0.7rem; letter-spacing: 0.05em;">${p.content || '-'}</span></td>
                 </tr>
             `;
         });

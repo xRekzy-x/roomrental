@@ -25,7 +25,7 @@ public interface renterRepository extends JpaRepository<renter, String> {
         @Param("fullName") String fullName,
         @Param("cccdNumber") String cccdNumber,
         @Param("phone") String phone,
-        @Param("dob") LocalDate dob,
+        @Param("dob") String dob,
         @Param("roomNumber") String roomNumber
     );
 
