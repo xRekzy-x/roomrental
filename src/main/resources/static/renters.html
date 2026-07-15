@@ -30,6 +30,9 @@
         <!-- Danh sách khách thuê rộng 100% -->
         <div class="card" style="width: 100%;">
             <div class="card-header-flex">
+                <div class="search-box-container">
+                    <input type="text" id="search-input" placeholder="Tìm tên, CCCD, SĐT..." oninput="filterTable('table-renters-body')" class="search-input">
+                </div>
                 <h2>Danh sách khách thuê</h2>
                 <div style="display: flex; gap: 0.5rem;">
                     <button onclick="openRenterModal()" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Thêm khách thuê</button>
@@ -37,7 +40,7 @@
                 </div>
             </div>
             <div class="table-wrapper">
-                <table>
+                <table class="responsive-table">
                     <thead>
                         <tr>
                             <th>ID</th>

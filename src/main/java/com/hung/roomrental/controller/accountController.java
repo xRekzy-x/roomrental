@@ -1,12 +1,15 @@
 package com.hung.roomrental.controller;
 
 import com.hung.roomrental.entity.account;
+import com.hung.roomrental.entity.renter;
 import com.hung.roomrental.repository.accountRepository;
+import com.hung.roomrental.repository.renterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -14,6 +17,9 @@ public class accountController {
 
     @Autowired
     private accountRepository accountRepo;
+
+    @Autowired
+    private renterRepository renterRepo;
 
     @GetMapping
     public List<account> getAllAccounts() {
@@ -33,25 +39,30 @@ public class accountController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // @PutMapping("/{id}")
-    // public ResponseEntity<account> updateAccount(
-    //         @PathVariable Long id,
-    //         @RequestBody account updated){
+ @PutMapping("/{id}")
+    public ResponseEntity<?> updateAccount(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> payload) {
 
-    //     return accountRepo.findById(id).map(acc->{
+        return accountRepo.findById(id).map(acc -> {
+            acc.setUsername((String) payload.get("username"));
+            
+            String password = (String) payload.get("password");
+            if (password != null && !password.isBlank()) {
+                acc.setPassword(password);
+            }
+            
+            acc.setRole(com.hung.roomrental.entity.role.valueOf((String) payload.get("role")));
+            
+            String renterId = (String) payload.get("renterId");
+            if (renterId != null && !renterId.isBlank()) {
+                renter r = renterRepo.findById(renterId).orElse(null);
+                acc.setRenter(r);
+            } else {
+                acc.setRenter(null);
+            }
 
-    //         acc.setUsername(updated.getUsername());
-
-    //         if(updated.getPassword()!=null &&
-    //                 !updated.getPassword().isBlank()){
-
-    //             acc.setPassword(passwordEncoder.encode(updated.getPassword()));
-    //         }
-
-    //         acc.setRole(updated.getRole());
-
-    //         return ResponseEntity.ok(accountRepo.save(acc));
-
-    //     }).orElse(ResponseEntity.notFound().build());
-    // }
+            return ResponseEntity.ok(accountRepo.save(acc));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

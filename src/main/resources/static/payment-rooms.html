@@ -32,6 +32,9 @@
             <div class="card-header-flex" style="margin-bottom: 0;">
                 <h2>Trạng thái thanh toán theo kỳ</h2>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div class="search-box-container">
+                        <input type="text" id="search-input" placeholder="Tìm số phòng..." oninput="filterPaymentRooms()" class="search-input">
+                    </div>
                     <label for="billing-month-input" style="font-weight: 600; font-size: 0.9rem;">Tháng thanh toán:</label>
                     <input type="month" id="billing-month-input" class="form-control" style="width: auto;" onchange="fetchPaymentRoomsStatus()">
                 </div>

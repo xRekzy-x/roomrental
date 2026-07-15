@@ -86,7 +86,6 @@ public class sepayWebhookController {
                     .amount(request.getTransferAmount())
                     .billingMonth(billingMonth)
                     .paymentDate(paymentDateTime)
-                    .status("PAID")
                     .transactionId(sepayTxId)
                     .content(request.getContent())
                     .build();
@@ -221,6 +220,24 @@ public class sepayWebhookController {
         response.put("payments", payments);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}/assign-room")
+    public ResponseEntity<?> assignRoomToPayment(
+            @PathVariable Long id,
+            @RequestParam("roomNumber") String roomNumber) {
+
+        return paymentRepo.findById(id).map(p -> {
+            if (roomNumber != null && !roomNumber.isBlank()) {
+                if (!roomRepo.existsById(roomNumber)) {
+                    return ResponseEntity.badRequest().body("Phòng trọ mang số " + roomNumber + " không tồn tại!");
+                }
+                p.setRoomNumber(roomNumber);
+            } else {
+                p.setRoomNumber(null);
+            }
+            return ResponseEntity.ok(paymentRepo.save(p));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
 

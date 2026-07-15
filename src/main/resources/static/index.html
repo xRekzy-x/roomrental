@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Rental - Quản lý phòng</title>
-    <link rel="stylesheet" href="/css/style.css?v=3">
+    <link rel="stylesheet" href="/css/style.css?v=4">
     <script src="/js/app.js?v=5"></script>
 
 </head>
@@ -31,6 +31,9 @@
         <!-- Card Danh sách phòng hiển thị rộng 100% -->
         <div class="card" style="width: 100%;">
             <div class="card-header-flex">
+                <div class="search-box-container">
+                        <input type="text" id="search-input" placeholder="Tìm số phòng, giá..." oninput="filterTable('table-rooms-body')" class="search-input">
+                    </div>
                 <h2>Danh sách phòng</h2>
                 <div style="display: flex; gap: 0.5rem;">
                     <!-- Nút bấm mở Form thêm phòng -->
@@ -39,7 +42,7 @@
                 </div>
             </div>
             <div class="table-wrapper">
-                <table>
+                <table class="responsive-table">
                     <thead>
                         <tr>
                             <th>Số phòng</th>

@@ -31,6 +31,9 @@
             <div class="card-header-flex">
                 <h2>Nhật ký thanh toán tự động (SePay)</h2>
                 <div style="display: flex; gap: 0.5rem;">
+                    <div class="search-box-container">
+                        <input type="text" id="search-input" placeholder="Tìm mã GD, số tiền..." oninput="filterTable('table-payments-body')" class="search-input">
+                    </div>
                     <!-- Thêm nút Phòng để chuyển sang trang theo dõi phòng đóng/chưa đóng -->
                     <a href="payment-rooms.html" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Trạng thái đóng tiền</a>
                     <button onclick="fetchPayments()" class="btn btn-secondary">Làm mới</button>
@@ -55,11 +58,12 @@
                 <button onclick="fetchPayments()" class="btn btn-secondary">Làm mới</button>
             </div>
             <div class="table-wrapper">
-                <table>
+                <table class="responsive-table">
                     <thead>
                         <tr>
                             <th>Giao dịch ID</th>
                             <th>Số phòng</th>
+                            <th>Hành động</th>
                             <th>Số tiền đã đóng</th>
                             <th>Tháng thanh toán</th>
                             <th>Ngày giờ nhận tiền</th>
@@ -70,6 +74,25 @@
                         <!-- Dữ liệu JS sẽ tự động điền vào đây -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Hộp thoại nổi (Modal) cho việc Gán phòng vào Giao dịch -->
+        <div id="assignRoomModal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <span class="close-btn" onclick="closeAssignRoomModal()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem; color: var(--primary);">Gán phòng cho giao dịch</h2>
+                <form id="form-assign-room" onsubmit="event.preventDefault(); saveAssignRoom();">
+                    <input type="hidden" id="assignPaymentId">
+                    <div class="form-group">
+                        <label>Chọn số phòng muốn gán *</label>
+                        <select id="assignRoomNumber" class="form-control" required>
+                            <!-- JS nạp danh sách phòng tự động -->
+                        </select>
+                    </div>
+                    <div id="form-assign-room-error" class="form-error" role="alert"></div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu gán phòng</button>
+                </form>
             </div>
         </div>
     </main>

@@ -260,6 +260,41 @@ function closeVehicleModal() {
     }
 }
 
+async function openEditVehicleModal(id) {
+    const modal = document.getElementById('editVehicleModal');
+    if (modal) {
+        clearFormError('edit-form-vehicle');
+        modal.style.display = 'flex';
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/vehicles`);
+        if (!res.ok) throw new Error('Không thể tải thông tin phương tiện');
+        const vehicles = await res.json();
+        const vehicle = vehicles.find(v => v.id === id);
+
+        if (!vehicle) {
+            log('Không tìm thấy thông tin phương tiện cần chỉnh sửa', true);
+            return;
+        }
+
+        document.getElementById('editVehicleId').value = vehicle.id;
+        document.getElementById('editPlateNumber').value = vehicle.plateNumber || '';
+        document.getElementById('editVehicleType').value = vehicle.vehicleType || '';
+        document.getElementById('editVehicleRoomNumber').value = vehicle.room ? vehicle.room.roomNumber : '';
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+function closeEditVehicleModal() {
+    const modal = document.getElementById('editVehicleModal');
+    if (modal) {
+        clearFormError('edit-form-vehicle');
+        modal.style.display = 'none';
+    }
+}
+
 function openAccountModal() {
     const modal = document.getElementById('account-modal');
     if (modal) {
@@ -274,6 +309,65 @@ function closeAccountModal() {
         modal.style.display = 'none';
     }
 }
+async function openEditAccountModal(id) {
+    const modal = document.getElementById('editAccountModal');
+    if (modal) {
+        clearFormError('edit-form-account');
+        modal.style.display = 'flex';
+    }
+    try {
+        const res = await fetch(`${API_BASE}/accounts`);
+        if (!res.ok) throw new Error('Không thể tải thông tin tài khoản');
+        const accounts = await res.json();
+        const acc = accounts.find(item => String(item.id) === String(id));
+        if (!acc) return;
+
+        document.getElementById('editAccountId').value = acc.id;
+        document.getElementById('editUsername').value = acc.username || '';
+        document.getElementById('editPassword').value = ''; // Luôn để trống để điền mật khẩu mới khi đổi
+        document.getElementById('editRole').value = acc.role || 'RENTER';
+        document.getElementById('editAccountRenterId').value = acc.renter ? acc.renter.id : '';
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+function closeEditAccount() {
+    const modal = document.getElementById('editAccountModal');
+    if (modal) {
+        clearFormError('edit-form-account');
+        modal.style.display = 'none';
+    }
+}
+
+async function saveAccount() {
+    clearFormError('edit-form-account');
+    const id = document.getElementById('editAccountId').value;
+    const payload = {
+        username: document.getElementById('editUsername').value.trim(),
+        password: document.getElementById('editPassword').value.trim() || null,
+        role: document.getElementById('editRole').value,
+        renterId: document.getElementById('editAccountRenterId').value.trim() || null
+    };
+
+    try {
+        const res = await fetch(`${API_BASE}/accounts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || 'Không thể cập nhật thông tin tài khoản');
+        }
+        log(`Cập nhật thành công tài khoản ID: ${id}!`);
+        closeEditAccount();
+        fetchAccounts();
+    } catch (err) {
+        showFormError('edit-form-account', err.message);
+        log(err.message, true);
+    }
+}
 
 // Đóng bất kỳ Modal nào khi click ra vùng trống bên ngoài
 window.addEventListener('click', (e) => {
@@ -283,7 +377,10 @@ window.addEventListener('click', (e) => {
     const accountModal = document.getElementById('account-modal');
     const editRoomModal = document.getElementById('editRoomModal');
     const editRenterModal = document.getElementById('editRenterModal');
+    const editVehicleModal = document.getElementById('editVehicleModal');
     const roomBillModal = document.getElementById('room-bill-modal');
+    const editAccountModal = document.getElementById('editAccountModal');
+    const assignRoomModal = document.getElementById('assignRoomModal');
 
     if (e.target === roomModal) closeRoomModal();
     if (e.target === renterModal) closeRenterModal();
@@ -291,7 +388,10 @@ window.addEventListener('click', (e) => {
     if (e.target === accountModal) closeAccountModal();
     if (e.target === editRoomModal) closeEditRoom();
     if (e.target === editRenterModal) closeEditRenter();
+    if (e.target === editVehicleModal) closeEditVehicleModal();
     if (e.target === roomBillModal) closeRoomBillModal();
+    if (e.target === editAccountModal) closeEditAccount();
+    if (e.target === assignRoomModal) closeAssignRoomModal();
 });
 
 // --- QUẢN LÝ PHÒNG TRỌ (ROOMS API) ---
@@ -307,11 +407,11 @@ async function fetchRooms() {
             const statusClass = room.status.toLowerCase();
             tbody.innerHTML += `
                 <tr>
-                    <td style="font-family: monospace; font-weight: 600;">${room.roomNumber}</td>
-                    <td>${room.area || '-'} m²</td>
-                    <td>${parseFloat(room.price).toLocaleString()} đ</td>
-                    <td><span class="status-tag ${statusClass}">${room.status}</span></td>
-                    <td>
+                    <td data-label="Số phòng" style="font-family: monospace; font-weight: 600;">${room.roomNumber}</td>
+                    <td data-label="Diện tích">${room.area || '-'} m²</td>
+                    <td data-label="Giá tiền">${parseFloat(room.price).toLocaleString()} đ</td>
+                    <td data-label="Trạng thái"><span class="status-tag ${statusClass}">${room.status}</span></td>
+                    <td data-label="Thao tác">
                         <button onclick="deleteRoom('${room.roomNumber}')" class="btn btn-danger">Xoá</button>
                         <button onclick="openEditRoomModal('${room.roomNumber}')" class="btn btn-warning">Sửa</button>
                     </td>
@@ -380,12 +480,12 @@ async function fetchRenters() {
         renters.forEach(renter => {
             tbody.innerHTML += `
                 <tr>
-                    <td style="font-family: monospace;">${renter.id}</td>
-                    <td style="font-weight: 600;">${renter.fullName}</td>
-                    <td style="font-family: monospace;">${renter.cccdNumber}</td>
-                    <td>${renter.phone || '-'}</td>
-                    <td style="font-weight: bold; font-family: monospace;">${renter.roomNumber || '-'}</td>
-                    <td>
+                    <td data-label="ID" style="font-family: monospace;">${renter.id}</td>
+                    <td data-label="Tên khách" style="font-weight: 600;">${renter.fullName}</td>
+                    <td data-label="CCCD" style="font-family: monospace;">${renter.cccdNumber}</td>
+                    <td data-label="SĐT">${renter.phone || '-'}</td>
+                    <td data-label="Phòng" style="font-weight: bold; font-family: monospace;">${renter.roomNumber || '-'}</td>
+                    <td data-label="Thao tác">
                         <button onclick="deleteRenter('${renter.id}')" class="btn btn-danger">Xoá</button>
                         <button onclick="openEditRenterModal('${renter.id}')" class="btn btn-warning">Sửa</button>
                     </td>
@@ -502,12 +602,13 @@ async function fetchVehicles() {
         vehicles.forEach(v => {
             tbody.innerHTML += `
                 <tr>
-                    <td style="font-family: monospace;">${v.id}</td>
-                    <td style="font-weight: 600;">${v.plateNumber}</td>
-                    <td>${v.vehicleType || '-'}</td>
-                    <td style="font-weight: bold; font-family: monospace;">${v.room ? v.room.roomNumber : '-'}</td>
-                    <td>
+                    <td data-label="ID" style="font-family: monospace;">${v.id}</td>
+                    <td data-label="Biển số" style="font-weight: 600;">${v.plateNumber}</td>
+                    <td data-label="Loại xe">${v.vehicleType || '-'}</td>
+                    <td data-label="Số phòng" style="font-weight: bold; font-family: monospace;">${v.room ? v.room.roomNumber : '-'}</td>
+                    <td data-label="Thao tác">
                         <button onclick="deleteVehicle('${v.id}')" class="btn btn-danger">Xoá</button>
+                        <button onclick="openEditVehicleModal('${v.id}')" class="btn btn-warning">Sửa</button>
                     </td>
                 </tr>
             `;
@@ -563,6 +664,36 @@ async function createVehicle(e) {
     }
 }
 
+async function saveVehicle() {
+    clearFormError('edit-form-vehicle');
+    const id = document.getElementById('editVehicleId').value;
+    const payload = {
+        plateNumber: document.getElementById('editPlateNumber').value.trim(),
+        vehicleType: document.getElementById('editVehicleType').value.trim() || null,
+        roomNumber: document.getElementById('editVehicleRoomNumber').value.trim() || null
+    };
+
+    try {
+        const res = await fetch(`${API_BASE}/vehicles/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || 'Không thể cập nhật thông tin phương tiện');
+        }
+
+        log(`Cập nhật thành công thông tin phương tiện ${id}!`);
+        closeEditVehicleModal();
+        fetchVehicles();
+    } catch (err) {
+        showFormError('edit-form-vehicle', err.message);
+        log(err.message, true);
+    }
+}
+
 async function deleteVehicle(id) {
     if (!confirm(`Xoá phương tiện ${id}?`)) return;
     try {
@@ -593,6 +724,7 @@ async function fetchAccounts() {
                     <td style="font-weight: bold; font-family: monospace;">${acc.renter ? acc.renter.id : '-'}</td>
                     <td>
                         <button onclick="deleteAccount(${acc.id})" class="btn btn-danger">Xoá</button>
+                        <button onclick="openEditAccountModal('${acc.id}')" class="btn btn-warning">Sửa</button>
                     </td>
                 </tr>
             `;
@@ -682,12 +814,19 @@ async function fetchPayments() {
             
             tbody.innerHTML += `
                 <tr>
-                    <td style="font-family: monospace; font-weight: 600; color: var(--text-muted);">${p.transactionId}</td>
-                    <td style="font-weight: bold; font-family: monospace;">${roomDisplay}</td>
-                    <td style="color: var(--success); font-weight: bold;">+${parseFloat(p.amount).toLocaleString()} đ</td>
-                    <td style="font-family: monospace; font-weight: 600;">Tháng ${p.billingMonth.substring(5)}/${p.billingMonth.substring(0,4)}</td>
-                    <td>${formattedDate}</td>
-                    <td><span class="status-tag available" style="font-size: 0.7rem; letter-spacing: 0.05em;">${p.content || '-'}</span></td>
+                    <td data-label="Giao dịch ID" style="font-family: monospace; font-weight: 600; color: var(--text-muted);">${p.transactionId}</td>
+                    <td data-label="Số phòng" style="font-weight: bold; font-family: monospace;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                            <span>${roomDisplay}</span>
+                        </div>
+                    </td>
+                    <td data-label="Hành động">
+                        <button onclick="openAssignRoomModal(${p.id}, '${p.roomNumber || ''}')" class="btn btn-primary" style="font-size: 0.65rem; padding: 2px 6px; width: auto; display: inline-flex;">Gán phòng</button>
+                    </td>
+                    <td data-label="Số tiền đã đóng" style="color: var(--success); font-weight: bold;">+${parseFloat(p.amount).toLocaleString()} đ</td>
+                    <td data-label="Tháng thanh toán" style="font-family: monospace; font-weight: 600;">Tháng ${p.billingMonth.substring(5)}/${p.billingMonth.substring(0,4)}</td>
+                    <td data-label="Ngày giờ nhận tiền">${formattedDate}</td>
+                    <td data-label="Nội dung"><span style="text-align:left!important; font-size: 0.7rem; letter-spacing: 0.05em;">${p.content || '-'}</span></td>
                 </tr>
             `;
         });
@@ -873,6 +1012,67 @@ function closeRoomBillModal() {
     }
 }
 
+async function openAssignRoomModal(paymentId, currentRoom) {
+    const modal = document.getElementById('assignRoomModal');
+    if (modal) {
+        clearFormError('form-assign-room');
+        modal.style.display = 'flex';
+    }
+    
+    document.getElementById('assignPaymentId').value = paymentId;
+    
+    const select = document.getElementById('assignRoomNumber');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- Đang tải danh sách phòng --</option>';
+
+    try {
+        // Tải danh sách phòng từ database để đưa vào ô Select thả xuống
+        const res = await fetch(`${API_BASE}/rooms`);
+        if (!res.ok) throw new Error('Không thể tải danh sách phòng để gán');
+        const rooms = await res.json();
+        
+        select.innerHTML = '<option value="">-- Chọn số phòng gán --</option>';
+        rooms.forEach(r => {
+            const isSelected = r.roomNumber === currentRoom ? 'selected' : '';
+            select.innerHTML += `<option value="${r.roomNumber}" ${isSelected}>Phòng ${r.roomNumber}</option>`;
+        });
+    } catch (err) {
+        select.innerHTML = '<option value="">Lỗi tải dữ liệu phòng</option>';
+        log(err.message, true);
+    }
+}
+
+function closeAssignRoomModal() {
+    const modal = document.getElementById('assignRoomModal');
+    if (modal) {
+        clearFormError('form-assign-room');
+        modal.style.display = 'none';
+    }
+}
+
+async function saveAssignRoom() {
+    clearFormError('form-assign-room');
+    const paymentId = document.getElementById('assignPaymentId').value;
+    const roomNumber = document.getElementById('assignRoomNumber').value;
+
+    try {
+        const res = await fetch(`${API_BASE}/payments/${paymentId}/assign-room?roomNumber=${roomNumber}`, {
+            method: 'PUT'
+        });
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || 'Không thể thực hiện gán phòng cho giao dịch này');
+        }
+        log(`Đã gán thành công phòng ${roomNumber} cho giao dịch ID: ${paymentId}!`);
+        closeAssignRoomModal();
+        fetchPayments(); // Tải lại danh sách lịch sử giao dịch để áp dụng thay đổi hiển thị
+    } catch (err) {
+        showFormError('form-assign-room', err.message);
+        log(err.message, true);
+    }
+}
+
 function toggleMobileMenu() {
     const menuToggle = document.querySelector('.menu-toggle');
     const navTabs = document.getElementById('nav-tabs');
@@ -880,4 +1080,68 @@ function toggleMobileMenu() {
         menuToggle.classList.toggle('active');
         navTabs.classList.toggle('show');
     }
+}
+
+// --- BỘ LỌC TÌM KIẾM THỜI GIAN THỰC ĐA NĂNG (CLIENT-SIDE SEARCH FILTER) ---
+
+// 1. Hàm lọc đa năng áp dụng cho hầu hết các trang danh sách đơn bảng
+function filterTable(tbodyId) {
+    const input = document.getElementById('search-input');
+    if (!input) return;
+    const filter = input.value.toLowerCase().trim();
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    const rows = tbody.getElementsByTagName('tr');
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        
+        // Bỏ qua không ẩn các dòng thông báo rỗng (như "Chưa có phòng nào...")
+        if (row.cells.length === 1 && row.cells[0].getAttribute('colspan')) {
+            continue;
+        }
+        
+        let matchFound = false;
+        // Duyệt qua tất cả các ô trong hàng để tìm kiếm tương thích với từ khóa
+        for (let j = 0; j < row.cells.length; j++) {
+            const cellText = row.cells[j].innerText.toLowerCase();
+            if (cellText.includes(filter)) {
+                matchFound = true;
+                break;
+            }
+        }
+        
+        row.style.display = matchFound ? '' : 'none';
+    }
+}
+
+// 2. Hàm lọc song song cả 2 bảng (Chưa đóng & Đã đóng) trên trang theo dõi trạng thái thanh toán phòng
+function filterPaymentRooms() {
+    const input = document.getElementById('search-input');
+    if (!input) return;
+    const filter = input.value.toLowerCase().trim();
+    
+    const bodies = ['table-unpaid-body', 'table-paid-body'];
+    bodies.forEach(tbodyId => {
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+        const rows = tbody.getElementsByTagName('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.cells.length === 1 && row.cells[0].getAttribute('colspan')) {
+                continue;
+            }
+            
+            let matchFound = false;
+            for (let j = 0; j < row.cells.length; j++) {
+                const cellText = row.cells[j].innerText.toLowerCase();
+                if (cellText.includes(filter)) {
+                    matchFound = true;
+                    break;
+                }
+            }
+            row.style.display = matchFound ? '' : 'none';
+        }
+    });
 }

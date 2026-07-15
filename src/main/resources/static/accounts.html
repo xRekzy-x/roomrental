@@ -18,6 +18,9 @@
         <!-- Danh sách tài khoản rộng 100% -->
         <div class="card" style="width: 100%;">
             <div class="card-header-flex">
+                <div class="search-box-container">
+                    <input type="text" id="search-input" placeholder="Tìm tên đăng nhập..." oninput="filterTable('table-accounts-body')" class="search-input">
+                </div>
                 <h2>Danh sách tài khoản</h2>
                 <div style="display: flex; gap: 0.5rem;">
                     <button onclick="openAccountModal()" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Thêm tài khoản</button>
@@ -69,6 +72,37 @@
                     </div>
                     <div id="form-account-error" class="form-error" role="alert"></div>
                     <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu tài khoản</button>
+                </form>
+            </div>
+        </div>
+        <!-- Hộp thoại nổi (Modal) cho việc Sửa Tài khoản -->
+        <div id="editAccountModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeEditAccount()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem;">Chỉnh sửa tài khoản</h2>
+                <form id="edit-form-account" onsubmit="event.preventDefault(); saveAccount();">
+                    <input type="hidden" id="editAccountId">
+                    <div class="form-group">
+                        <label>Tên đăng nhập *</label>
+                        <input type="text" id="editUsername" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu mới (Bỏ trống nếu giữ nguyên)</label>
+                        <input type="password" id="editPassword" class="form-control" placeholder="Nhập mật khẩu mới nếu muốn đổi">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò *</label>
+                        <select id="editRole" class="form-control">
+                            <option value="RENTER">Khách thuê (RENTER)</option>
+                            <option value="ADMIN">Quản trị viên (ADMIN)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Khách thuê (Renter ID)</label>
+                        <input type="text" id="editAccountRenterId" class="form-control" placeholder="Bỏ trống nếu là ADMIN">
+                    </div>
+                    <div id="edit-form-account-error" class="form-error" role="alert"></div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu thay đổi</button>
                 </form>
             </div>
         </div>

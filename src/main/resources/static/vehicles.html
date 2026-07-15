@@ -31,6 +31,9 @@
         <!-- Danh sách phương tiện rộng 100% -->
         <div class="card" style="width: 100%;">
             <div class="card-header-flex">
+                <div class="search-box-container">
+                    <input type="text" id="search-input" placeholder="Tìm biển số, loại xe..." oninput="filterTable('table-vehicles-body')" class="search-input">
+                </div>
                 <h2>Danh sách phương tiện</h2>
                 <div style="display: flex; gap: 0.5rem;">
                     <button onclick="openVehicleModal()" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Thêm phương tiện</button>
@@ -38,7 +41,7 @@
                 </div>
             </div>
             <div class="table-wrapper">
-                <table>
+                <table class="responsive-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -58,6 +61,7 @@
         <!-- Hộp thoại nổi (Modal) cho Phương tiện -->
         <div id="vehicle-modal" class="modal">
             <div class="modal-content">
+                
                 <span class="close-btn" onclick="closeVehicleModal()">&times;</span>
                 <h2 class="card-title" style="margin-bottom: 1rem;">Thêm phương tiện</h2>
                 <form id="form-vehicle">
@@ -75,6 +79,31 @@
                     </div>
                     <div id="form-vehicle-error" class="form-error" role="alert"></div>
                     <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu xe</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Hộp thoại nổi (Modal) sửa phương tiện -->
+        <div id="editVehicleModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeEditVehicleModal()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem;">Chỉnh sửa phương tiện</h2>
+                <form id="edit-form-vehicle" onsubmit="event.preventDefault(); saveVehicle();">
+                    <input type="hidden" id="editVehicleId">
+                    <div class="form-group">
+                        <label>Biển số xe *</label>
+                        <input type="text" id="editPlateNumber" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Loại xe</label>
+                        <input type="text" id="editVehicleType" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Số phòng sở hữu *</label>
+                        <input type="text" id="editVehicleRoomNumber" required class="form-control" placeholder="Ví dụ: 101">
+                    </div>
+                    <div id="edit-form-vehicle-error" class="form-error" role="alert"></div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Lưu thay đổi</button>
                 </form>
             </div>
         </div>

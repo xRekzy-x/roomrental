@@ -450,6 +450,50 @@ footer h3 {
 }
 
 /* ==========================================================================
+   11. THANH TÌM KIẾM NHANH (SEARCH BOX STYLE)
+   ========================================================================== */
+.search-box-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 200px;
+    width: 100%;
+}
+
+/* Biểu tượng kính lúp sử dụng mã Unicode */
+.search-box-container::before {
+    content: "🔍";
+    position: absolute;
+    left: 0.65rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.45rem 0.5rem 0.45rem 2rem; /* padding bên trái rộng để chừa chỗ cho kính lúp */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.search-input:focus {
+    border-color: var(--primary);
+}
+
+/* Cấu hình giãn rộng thanh tìm kiếm trên màn hình di động */
+@media (max-width: 768px) {
+    .search-box-container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ==========================================================================
    9. HIỆU ỨNG ĐỘNG (ANIMATIONS)
    ========================================================================== */
 @keyframes slideDown {
@@ -556,5 +600,59 @@ footer h3 {
     }
     .menu-toggle.active .bar:nth-child(3) {
         transform: translateY(-8px) rotate(-45deg);
+    }
+
+    /* --- Chuyển đổi bảng .responsive-table thành dạng Card trên Mobile --- */
+    .responsive-table, 
+    .responsive-table thead, 
+    .responsive-table tbody, 
+    .responsive-table th, 
+    .responsive-table td, 
+    .responsive-table tr {
+        display: block; /* Hủy bỏ cấu trúc bảng, chuyển hết về dạng khối dọc */
+    }
+
+    /* Ẩn dòng tiêu đề (thead) của bảng trên mobile */
+    .responsive-table thead {
+        display: none !important;
+    }
+
+    /* Mỗi hàng (tr) biến thành một Card độc lập */
+    .responsive-table tr {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        margin-bottom: 1.25rem;
+        padding: 1rem;
+        background-color: var(--bg-card);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    /* Mỗi ô (td) biến thành một hàng dọc dạng Key-Value */
+    .responsive-table td {
+        border: none;
+        border-bottom: 1px dashed #f3f4f6; /* Đường gạch đứt mờ phân tách giữa các thuộc tính */
+        padding: 0.75rem 0.5rem !important;
+        text-align: right; /* Đẩy giá trị sang lề phải */
+        position: relative;
+        padding-left: 45% !important; /* Dành khoảng trống 45% bên trái cho nhãn */
+        min-height: 42px;
+        overflow: hidden;
+    }
+
+    /* Loại bỏ đường gạch đứt ở ô thuộc tính cuối cùng của Card */
+    .responsive-table td:last-child {
+        border-bottom: none;
+    }
+
+    /* Tự động gán nhãn cột từ thuộc tính data-label của HTML sang cột bên trái */
+    .responsive-table td::before {
+        content: attr(data-label); /* Trích xuất nội dung từ thuộc tính data-label */
+        position: absolute;
+        left: 0.5rem;
+        top: 0.75rem;
+        width: 40%;
+        text-align: left;
+        font-weight: 700; /* Làm đậm nhãn tiêu đề */
+        color: var(--text-muted);
     }
 }
