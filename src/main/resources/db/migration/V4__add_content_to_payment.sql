@@ -1,0 +1,1 @@
+ALTER TABLE payment ADD COLUMN content VARCHAR(255);

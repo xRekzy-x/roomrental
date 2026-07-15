@@ -35,4 +35,7 @@ public class payment {
 
     @Column(name = "transaction_id", nullable = false, unique = true, length = 50)
     private String transactionId;
+
+    @Column(name = "content", length = 255)
+    private String content;
 }

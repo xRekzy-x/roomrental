@@ -2,7 +2,10 @@ package com.hung.roomrental.controller;
 
 import com.hung.roomrental.dto.sepayWebhookRequest;
 import com.hung.roomrental.entity.payment;
+import com.hung.roomrental.entity.renter;
+import com.hung.roomrental.entity.room;
 import com.hung.roomrental.repository.paymentRepository;
+import com.hung.roomrental.repository.renterRepository;
 import com.hung.roomrental.repository.roomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,16 +18,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/payments")
 public class sepayWebhookController {
-
-    @GetMapping
-    public List<payment> getAllPayments() {
-        // Trả về danh sách tất cả các giao dịch thanh toán, xếp mới nhất lên đầu
-        return paymentRepo.findAll();
-    }
 
     @Autowired
     private roomRepository roomRepo;
@@ -32,16 +34,21 @@ public class sepayWebhookController {
     @Autowired
     private paymentRepository paymentRepo;
 
+    @Autowired
+    private renterRepository renterRepo;
+
     // Mã bảo mật tự chọn khớp với cấu hình trên SePay Dashboard
     private final String API_KEY = "api_go_dau_hung_fabulous";
+
+    @GetMapping
+    public List<payment> getAllPayments() {
+        return paymentRepo.findAll();
+    }
 
     @PostMapping("/sepay-webhook")
     public ResponseEntity<?> handleWebhook(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody sepayWebhookRequest request) {
-    System.out.println("========== WEBHOOK ==========");
-    System.out.println(request);
-    System.out.println("=============================");
 
         System.out.println(">>> Nhận Webhook SePay cho ID giao dịch: " + request.getId());
 
@@ -133,4 +140,86 @@ public class sepayWebhookController {
 
         return null; // Không tìm thấy phòng nào hợp lệ
     }
+    @GetMapping("/room-status")
+    public ResponseEntity<?> getRoomPaymentStatus(@RequestParam(value = "month", required = false) String month) {
+        // Nếu không truyền tháng, mặc định lấy tháng hiện tại
+        if (month == null || month.isBlank()) {
+            month = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        }
+
+        List<com.hung.roomrental.entity.room> allRooms = roomRepo.findAll();
+        List<payment> payments = paymentRepo.findByBillingMonth(month);
+
+        // Gom nhóm tổng số tiền đã thanh toán của từng phòng trong tháng đó
+        Map<String, BigDecimal> paidMap = new HashMap<>();
+        for (payment p : payments) {
+            if (p.getRoomNumber() != null) {
+                BigDecimal currentSum = paidMap.getOrDefault(p.getRoomNumber(), BigDecimal.ZERO);
+                paidMap.put(p.getRoomNumber(), currentSum.add(p.getAmount()));
+            }
+        }
+
+        // Tạo cấu trúc dữ liệu trả về cho frontend
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (com.hung.roomrental.entity.room r : allRooms) {
+            BigDecimal totalPaid = paidMap.getOrDefault(r.getRoomNumber(), BigDecimal.ZERO);
+            
+            // Một phòng được coi là Đã đóng nếu tổng số tiền đóng lớn hơn hoặc bằng giá thuê phòng
+            boolean isPaid = totalPaid.compareTo(r.getPrice()) >= 0;
+
+            Map<String, Object> statusMap = new HashMap<>();
+            statusMap.put("roomNumber", r.getRoomNumber());
+            statusMap.put("price", r.getPrice());
+            statusMap.put("totalPaid", totalPaid);
+            statusMap.put("isPaid", isPaid);
+            result.add(statusMap);
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/room-details")
+    public ResponseEntity<?> getRoomPaymentDetails(
+            @RequestParam("roomNumber") String roomNumber,
+            @RequestParam(value = "month", required = false) String month) {
+
+        if (month == null || month.isBlank()) {
+            month = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        }
+
+        room r = roomRepo.findById(roomNumber).orElse(null);
+        if (r == null) {
+            return ResponseEntity.badRequest().body("Không tìm thấy phòng " + roomNumber);
+        }
+
+        List<payment> payments = paymentRepo.findByRoomNumberAndBillingMonth(roomNumber, month);
+
+        BigDecimal totalPaid = payments.stream()
+                .map(payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal roomPrice = r.getPrice() != null ? r.getPrice() : BigDecimal.ZERO;
+        BigDecimal remaining = roomPrice.subtract(totalPaid);
+
+        List<renter> renters = renterRepo.findByRoomRoomNumber(roomNumber);
+        List<Map<String, String>> renterInfos = renters.stream().map(renter -> {
+            Map<String, String> info = new HashMap<>();
+            info.put("fullName", renter.getFullName());
+            info.put("phone", renter.getPhone() != null ? renter.getPhone() : "-");
+            return info;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("roomNumber", r.getRoomNumber());
+        response.put("billingMonth", month);
+        response.put("price", roomPrice);
+        response.put("totalPaid", totalPaid);
+        response.put("remaining", remaining.compareTo(BigDecimal.ZERO) > 0 ? remaining : BigDecimal.ZERO);
+        response.put("isPaid", totalPaid.compareTo(roomPrice) >= 0);
+        response.put("renters", renterInfos);
+        response.put("payments", payments);
+
+        return ResponseEntity.ok(response);
+    }
 }
+

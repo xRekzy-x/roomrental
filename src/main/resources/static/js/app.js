@@ -12,6 +12,8 @@ function log(message, isError = false) {
 
 // BƯỚC KHỞI CHẠY (Tự phát hiện trang đang mở)
 document.addEventListener('DOMContentLoaded', () => {
+    
+    injectSharedHeaderAndNav();
     // Ràng buộc các sự kiện Submit Form (nếu có trong trang)
     bindFormEvents();
 
@@ -21,8 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('table-vehicles-body')) fetchVehicles();
     if (document.getElementById('table-accounts-body')) fetchAccounts();
     if (document.getElementById('table-payments-body')) fetchPayments(); 
+    if (document.getElementById('table-unpaid-body')) initPaymentRoomsPage();
 });
-
 function errorHandler(err) {
     let message = err.message;  
     if (message.includes("Duplicate")) {
@@ -54,6 +56,51 @@ function bindFormEvents() {
     if (formAccount) formAccount.addEventListener('submit', createAccount);
 }
 
+
+function injectSharedHeaderAndNav() {
+    const headerElement = document.querySelector('header');
+    const navContainer = document.querySelector('.nav-container');
+    const currentPath = window.location.pathname;
+
+    // Hàm kiểm tra trang hiện tại để tự động gắn class "active"
+    const getActiveClass = (pagePattern) => {
+        if (Array.isArray(pagePattern)) {
+            return pagePattern.some(pattern => currentPath.includes(pattern)) ? 'active' : '';
+        }
+        return currentPath.includes(pagePattern) ? 'active' : '';
+    };
+
+    const isHomePage = currentPath === '/' || currentPath.endsWith('/') || currentPath.includes('index.html');
+
+    // Nạp nội dung Header
+    if (headerElement) {
+        headerElement.innerHTML = `
+            <button class="menu-toggle" onclick="toggleMobileMenu()">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <div class="header-container">
+                <h1>Room Rental Console</h1>
+                <span class="badge">Spring Boot Backend</span>
+            </div>
+        `;
+    }
+
+    // Nạp nội dung Navigation đi kèm nút 3 gạch cho Mobile
+    if (navContainer) {
+        navContainer.innerHTML = `
+
+            <nav class="nav-tabs" id="nav-tabs">
+                <a href="index.html" class="nav-link ${isHomePage ? 'active' : ''}">Phòng trọ</a>
+                <a href="renters.html" class="nav-link ${getActiveClass('renters.html')}">Khách thuê</a>
+                <a href="vehicles.html" class="nav-link ${getActiveClass('vehicles.html')}">Phương tiện</a>
+                <a href="accounts.html" class="nav-link ${getActiveClass('accounts.html')}">Tài khoản</a>
+                <a href="payments.html" class="nav-link ${getActiveClass(['payments.html', 'payment-rooms.html'])}">Thanh toán</a>
+            </nav>
+        `;
+    }
+}
 function showFormError(formId, message) {
     const errorBox = document.getElementById(`${formId}-error`);
     if (!errorBox) return;
@@ -236,6 +283,7 @@ window.addEventListener('click', (e) => {
     const accountModal = document.getElementById('account-modal');
     const editRoomModal = document.getElementById('editRoomModal');
     const editRenterModal = document.getElementById('editRenterModal');
+    const roomBillModal = document.getElementById('room-bill-modal');
 
     if (e.target === roomModal) closeRoomModal();
     if (e.target === renterModal) closeRenterModal();
@@ -243,8 +291,8 @@ window.addEventListener('click', (e) => {
     if (e.target === accountModal) closeAccountModal();
     if (e.target === editRoomModal) closeEditRoom();
     if (e.target === editRenterModal) closeEditRenter();
+    if (e.target === roomBillModal) closeRoomBillModal();
 });
-
 
 // --- QUẢN LÝ PHÒNG TRỌ (ROOMS API) ---
 async function fetchRooms() {
@@ -259,8 +307,7 @@ async function fetchRooms() {
             const statusClass = room.status.toLowerCase();
             tbody.innerHTML += `
                 <tr>
-                    <td style="font-family: monospace;">${room.roomNumber}</td>
-                    <td style="font-weight: 600;">${room.roomNumber}</td>
+                    <td style="font-family: monospace; font-weight: 600;">${room.roomNumber}</td>
                     <td>${room.area || '-'} m²</td>
                     <td>${parseFloat(room.price).toLocaleString()} đ</td>
                     <td><span class="status-tag ${statusClass}">${room.status}</span></td>
@@ -655,5 +702,182 @@ async function fetchPayments() {
         log(`Đã cập nhật thành công ${payments.length} hóa đơn thanh toán.`);
     } catch (err) {
         log(err.message, true);
+    }
+}
+
+// Khởi tạo trang theo dõi trạng thái thanh toán phòng
+function initPaymentRoomsPage() {
+    const monthInput = document.getElementById('billing-month-input');
+    if (monthInput) {
+        // Gán giá trị tháng hiện tại cho input month (Định dạng YYYY-MM)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        monthInput.value = `${year}-${month}`;
+        
+        fetchPaymentRoomsStatus();
+    }
+}
+
+// Gọi API lấy thông tin đóng/chưa đóng của các phòng
+async function fetchPaymentRoomsStatus() {
+    const monthInput = document.getElementById('billing-month-input');
+    if (!monthInput) return;
+    const selectedMonth = monthInput.value; // định dạng YYYY-MM
+
+    try {
+        const res = await fetch(`${API_BASE}/payments/room-status?month=${selectedMonth}`);
+        if (!res.ok) throw new Error('Không thể tải trạng thái đóng tiền phòng.');
+        const data = await res.json();
+
+        const unpaidBody = document.getElementById('table-unpaid-body');
+        const paidBody = document.getElementById('table-paid-body');
+        const unpaidCount = document.getElementById('unpaid-count');
+        const paidCount = document.getElementById('paid-count');
+        const partialPaidCount = document.getElementById('partial-paid-count');
+
+        if (!unpaidBody || !paidBody) return;
+
+        unpaidBody.innerHTML = '';
+        paidBody.innerHTML = '';
+
+        let unpaidNum = 0;
+        let paidNum = 0;
+        let partialPaidNum = 0;
+        data.forEach(item => {
+            const isPaid = item.totalPaid > 0;
+            const isPartialPaid = item.totalPaid > 0 && item.totalPaid < item.price;
+            const amountText = parseFloat(item.totalPaid).toLocaleString() + " đ";
+            const priceText = parseFloat(item.price).toLocaleString() + " đ";
+            
+            const rowHTML = `
+                <tr class="clickable-row" onclick="openRoomBillModal('${item.roomNumber}')">
+                    <td style="font-weight: bold; font-family: monospace;">Phòng ${item.roomNumber}</td>
+                    <td>${priceText}</td>
+                    <td style="font-family: monospace; font-weight: bold; color: ${isPaid ? isPartialPaid ? 'var(--warning)' : 'var(--success)' : 'var(--danger)'}">
+                        ${amountText}
+                    </td>
+                </tr>
+            `;
+
+            if (isPaid) {
+                paidBody.innerHTML += rowHTML;
+                if(isPartialPaid) partialPaidNum++;
+                else paidNum++;
+            } else {
+                unpaidBody.innerHTML += rowHTML;
+                unpaidNum++;
+            }
+        });
+
+        // Bổ sung dòng thông báo nếu một trong hai danh sách trống để giữ khung cân đối
+        if (paidNum === 0 && partialPaidNum === 0) {
+            paidBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">Chưa có phòng nào đóng tiền</td></tr>`;
+        }
+        if (unpaidNum === 0) {
+            unpaidBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">Tất cả các phòng đã đóng đủ tiền</td></tr>`;
+        }
+
+        unpaidCount.textContent = unpaidNum;
+        paidCount.textContent = paidNum;
+        partialPaidCount.textContent = partialPaidNum;
+
+
+        log(`Đã tải trạng thái đóng tiền của các phòng trong kỳ ${selectedMonth}.`);
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+async function openRoomBillModal(roomNumber) {
+    const monthInput = document.getElementById('billing-month-input');
+    const selectedMonth = monthInput ? monthInput.value : '';
+
+    const modal = document.getElementById('room-bill-modal');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+
+    // Đặt lại dữ liệu chờ
+    document.getElementById('bill-modal-room').textContent = roomNumber;
+    document.getElementById('bill-modal-month').textContent = selectedMonth;
+    document.getElementById('bill-modal-renters').textContent = 'Đang tải...';
+    document.getElementById('bill-modal-price').textContent = '0 đ';
+    document.getElementById('bill-modal-total-paid').textContent = '0 đ';
+    document.getElementById('bill-modal-status').innerHTML = '-';
+    document.getElementById('bill-modal-payments-body').innerHTML = `<tr><td colspan="4" style="text-align:center;">Đang tải dữ liệu...</td></tr>`;
+
+    try {
+        const res = await fetch(`${API_BASE}/payments/room-details?roomNumber=${roomNumber}&month=${selectedMonth}`);
+        if (!res.ok) throw new Error('Không thể tải thông tin chi tiết hóa đơn.');
+        const data = await res.json();
+
+        // Hiển thị danh sách khách thuê
+        if (data.renters && data.renters.length > 0) {
+            const rentersStr = data.renters.map(r => `${r.fullName} (${r.phone})`).join(', ');
+            document.getElementById('bill-modal-renters').textContent = rentersStr;
+        } else {
+            document.getElementById('bill-modal-renters').textContent = 'Chưa có thông tin';
+        }
+
+        // Giá phòng & Tổng tiền đã đóng
+        document.getElementById('bill-modal-price').textContent = parseFloat(data.price).toLocaleString() + ' đ';
+        document.getElementById('bill-modal-total-paid').textContent = parseFloat(data.totalPaid).toLocaleString() + ' đ';
+
+        // Hiển thị nhãn trạng thái
+        const statusEl = document.getElementById('bill-modal-status');
+        if (data.isPaid) {
+            if (data.totalPaid > data.price) {
+                const extra = data.totalPaid - data.price;
+                statusEl.innerHTML = `<span class="status-tag available">Đã đóng dư (${parseFloat(extra).toLocaleString()} đ)</span>`;
+            } else {
+                statusEl.innerHTML = `<span class="status-tag available">Đã đóng đủ</span>`;
+            }
+        } else if (data.totalPaid > 0) {
+            statusEl.innerHTML = `<span class="status-tag occupied">Còn thiếu ${parseFloat(data.remaining).toLocaleString()} đ</span>`;
+        } else {
+            statusEl.innerHTML = `<span class="status-tag maintenance">Chưa đóng</span>`;
+        }
+
+        // Bảng lịch sử các giao dịch
+        const tbody = document.getElementById('bill-modal-payments-body');
+        tbody.innerHTML = '';
+
+        if (data.payments && data.payments.length > 0) {
+            data.payments.forEach(p => {
+                const dateStr = new Date(p.paymentDate).toLocaleString('vi-VN');
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-family: monospace; font-weight: 600;">${p.transactionId}</td>
+                        <td style="font-size: 0.85rem;">${dateStr}</td>
+                        <td style="color: var(--success); font-weight: bold; font-family: monospace;">+${parseFloat(p.amount).toLocaleString()} đ</td>
+                        <td style="font-size: 0.85rem; word-break: break-word;">${p.content || '-'}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 1.5rem;">Chưa có giao dịch chuyển khoản nào trong kỳ này.</td></tr>`;
+        }
+
+        log(`Đã tải chi tiết hóa đơn phòng ${roomNumber} kỳ ${selectedMonth}.`);
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+// Đóng Modal hóa đơn
+function closeRoomBillModal() {
+    const modal = document.getElementById('room-bill-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function toggleMobileMenu() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navTabs = document.getElementById('nav-tabs');
+    if (menuToggle && navTabs) {
+        menuToggle.classList.toggle('active');
+        navTabs.classList.toggle('show');
     }
 }

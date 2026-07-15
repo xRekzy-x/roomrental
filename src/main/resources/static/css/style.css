@@ -1,4 +1,6 @@
-/* Khởi tạo biến màu sắc */
+/* ==========================================================================
+   1. KHỞI TẠO BIẾN MÀU SẮC & CẤU HÌNH RESET CHUNG
+   ========================================================================== */
 :root {
     --primary: #2563eb;
     --primary-hover: #1d4ed8;
@@ -15,11 +17,13 @@
     --danger-bg: #fee2e2;
 }
 
-/* Cấu hình chung */
+/* Reset CSS mặc định - Triệt tiêu mọi dấu chấm tròn bullet lạ */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    list-style: none !important;
+    list-style-type: none !important;
 }
 
 body {
@@ -29,11 +33,31 @@ body {
     line-height: 1.5;
     min-height: 100vh;
     display: flex;
-    flex-direction: flex;
-    flex-direction: column;
+    flex-direction: column; /* Đã sửa lỗi flex-direction: flex */
 }
 
-/* Header */
+th,
+td {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+/* Triệt tiêu dấu chấm tròn và ký tự lạ phát sinh từ các thẻ điều hướng */
+.nav-container, .nav-tabs, .nav-link, .menu-toggle, .bar {
+    list-style: none !important;
+    list-style-type: none !important;
+    text-decoration: none !important;
+}
+
+.nav-container::before, .nav-container::after,
+.nav-tabs::before, .nav-tabs::after,
+.menu-toggle::before, .menu-toggle::after {
+    content: none !important;
+}
+
+/* ==========================================================================
+   2. HEADER & BANNER
+   ========================================================================== */
 header {
     background-color: var(--primary);
     color: white;
@@ -57,7 +81,9 @@ header {
     font-family: monospace;
 }
 
-/* Menu thanh điều hướng (Hỗ trợ cuộn ngang trên di động) */
+/* ==========================================================================
+   3. MENU THANH ĐIỀU HƯỚNG (NAVIGATION BAR)
+   ========================================================================== */
 .nav-container {
     max-width: 1200px;
     margin: 1.5rem auto 0 auto;
@@ -67,14 +93,13 @@ header {
 .nav-tabs {
     display: flex;
     gap: 1.5rem;
-    border-b: 2px solid var(--border-color);
     overflow-x: auto;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
 }
 
 .nav-tabs::-webkit-scrollbar {
-    display: none; /* Ẩn thanh cuộn trên di động */
+    display: none; /* Ẩn thanh cuộn */
 }
 
 .nav-link {
@@ -95,7 +120,39 @@ header {
     border-bottom-color: var(--primary);
 }
 
-/* Bố cục nội dung chính */
+/* --- Thiết kế Nút Menu 3 gạch (Hamburger Button) --- */
+.menu-toggle {
+    display: none; /* Mặc định ẩn trên Desktop */
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    box-shadow: none;
+    z-index: 1001; /* Đặt cao hơn cả Header để luôn hiển thị trên cùng */
+    position: absolute;
+}
+
+.menu-toggle .bar {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background-color: var(--text-main);
+    border-radius: 4px;
+    transition:
+        transform .45s cubic-bezier(.68,-0.6,.32,1.6),
+        opacity .25s ease;
+    transform-origin: center;
+    will-change: transform, opacity;
+}
+
+/* ==========================================================================
+   4. BỐ CỤC CHUNG & CÁC THẺ (CARDS)
+   ========================================================================== */
 main {
     flex-grow: 1;
     max-width: 1200px;
@@ -104,26 +161,32 @@ main {
     padding: 1.5rem 1rem;
 }
 
+/* Bố cục Grid 2 cột tự cân đối chiều cao */
 .grid-layout {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1fr 1fr; /* Chia đều 50/50 */
     gap: 1.5rem;
+    align-items: stretch; /* Ép 2 cột luôn cao bằng nhau */
 }
 
-/* Thiết kế Card */
 .card {
     background-color: var(--bg-card);
     border: 1px solid rgba(0,0,0,0.08);
     border-radius: 12px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
 }
 
-.card-title {
+.card-title, .card-title>h2 {
     font-size: 1.15rem;
     font-weight: 700;
     margin-bottom: 1.25rem;
     color: var(--primary);
+  
 }
 
 .card-header-flex {
@@ -139,7 +202,59 @@ main {
     color: var(--text-main);
 }
 
-/* Form */
+.table-wrapper {
+    flex-grow: 1; /* Chiếm trọn không gian trống bên dưới thẻ */
+    overflow-x: auto;
+}
+
+/* ==========================================================================
+   5. BẢNG (TABLES) & TRẠNG THÁI (STATUS TAGS)
+   ========================================================================== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    min-width: 0;
+}
+
+th {
+    background-color: #f9fafb;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+}
+
+tr:hover {
+    background-color: #fbfbfb;
+}
+
+/* Status Tags */
+.status-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 50px;
+}
+
+.status-tag.available { background-color: var(--success-bg); color: var(--success); }
+.status-tag.occupied { background-color: var(--warning-bg); color: var(--warning); }
+.status-tag.maintenance { background-color: var(--danger-bg); color: var(--danger); }
+
+/* ==========================================================================
+   6. BIỂU MẪU (FORMS) & NÚT (BUTTONS)
+   ========================================================================== */
 .form-group {
     margin-bottom: 1rem;
 }
@@ -166,7 +281,6 @@ main {
     border-color: var(--primary);
 }
 
-/* Inline form errors */
 .form-error {
     display: none;
     margin-bottom: 1rem;
@@ -238,54 +352,56 @@ main {
     background-color: #fde047;
 }
 
-/* Khoảng cách nhỏ giữa các nút trong bảng */
 td .btn {
     margin-right: 0.25rem;
 }
 
-table {
+/* ==========================================================================
+   7. HỘP THOẠI NỔI (MODALS)
+   ========================================================================== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
     width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-    min-width: 600px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
 }
 
-th {
-    background-color: #f9fafb;
+.modal-content {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: slideDown 0.3s ease-out;
+}
+
+.close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1.25rem;
+    font-size: 1.5rem;
+    font-weight: bold;
     color: var(--text-muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: color 0.15s ease;
 }
 
-td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f3f4f6;
-    color: #374151;
+.close-btn:hover {
+    color: var(--danger);
 }
 
-tr:hover {
-    background-color: #fbfbfb;
-}
-
-/* Status Tags */
-.status-tag {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.15rem 0.5rem;
-    border-radius: 50px;
-}
-
-.status-tag.available { background-color: var(--success-bg); color: var(--success); }
-.status-tag.occupied { background-color: var(--warning-bg); color: var(--warning); }
-.status-tag.maintenance { background-color: var(--danger-bg); color: var(--danger); }
-
-/* Footer Logs */
+/* ==========================================================================
+   8. FOOTER & HỘP THOẠI NHẬT KÝ (LOGS)
+   ========================================================================== */
 footer {
     background-color: #1f2937;
     color: #d1d5db;
@@ -318,52 +434,24 @@ footer h3 {
     overflow-y: auto;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
 }
-/* --- CSS CHO HỘP THOẠI NỔI (MODAL) --- */
 
-/* Lớp phủ mờ toàn màn hình */
-.modal {
-    display: none; /* Ẩn mặc định */
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Nền tối mờ */
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
-
-/* Khung nội dung hộp thoại */
-.modal-content {
-    background-color: var(--bg-card);
-    border-radius: 12px;
-    padding: 2rem;
-    width: 100%;
-    max-width: 500px; /* Chiều rộng tối đa trên desktop/iPad */
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-    position: relative;
-    animation: slideDown 0.3s ease-out; /* Hiệu ứng xuất hiện */
-}
-
-/* Nút đóng (X) */
-.close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1.25rem;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--text-muted);
+/* Style cho hàng có thể bấm chọn */
+.clickable-row {
     cursor: pointer;
-    transition: color 0.15s ease;
+    transition: background-color 0.15s ease, transform 0.05s ease;
 }
 
-.close-btn:hover {
-    color: var(--danger);
+.clickable-row:hover {
+    background-color: #f0f9ff !important;
 }
 
-/* Hiệu ứng trượt nhẹ từ trên xuống */
+.clickable-row:active {
+    background-color: #e0f2fe !important;
+}
+
+/* ==========================================================================
+   9. HIỆU ỨNG ĐỘNG (ANIMATIONS)
+   ========================================================================== */
 @keyframes slideDown {
     from {
         transform: translateY(-20px);
@@ -375,12 +463,14 @@ footer h3 {
     }
 }
 
-/* RESPONSIVE MEDIA QUERIES (Tối ưu cho iPad và Mobile) */
+/* ==========================================================================
+   10. CẤU HÌNH RESPONSIVE (MÀN HÌNH DI ĐỘNG & IPAD DƯỚI 1024PX)
+   ========================================================================== */
 @media (max-width: 1024px) {
     .grid-layout {
-        grid-template-columns: 1fr; /* Chuyển thành 1 cột dọc trên iPad đứng và Di động */
+        grid-template-columns: 1fr !important; /* Chuyển thành 1 cột dọc duy nhất */
     }
-    
+
     header {
         padding: 1rem;
     }
@@ -389,5 +479,82 @@ footer h3 {
         flex-direction: column;
         gap: 0.5rem;
         text-align: center;
+    }
+
+    .nav-container {
+        position: relative;
+        margin-top: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Thiết lập nút Hamburger */
+    .menu-toggle {
+        display: flex !important; /* Buộc hiển thị nút 3 gạch */
+        position: relative;
+        z-index: 1001;
+        transition: transform .35s ease;
+    }
+
+    /* Khi Menu mở ra, ghim nút Đóng (X) ở góc trên bên phải bên trong hộp ngăn kéo */
+    .menu-toggle.active {
+        position: fixed !important;
+        top: 1.5rem;
+        left: 235px; /* Khoảng cách đặt nút X bên trong chiều rộng 280px của ngăn kéo */
+        z-index: 2100; /* Nằm cao hơn cả hộp ngăn kéo */
+        transform: translateX(12px);
+    }
+
+    /* Chuyển thanh điều hướng thành dạng ngăn kéo (Drawer) đè lên cả Header màu xanh */
+    .nav-tabs {
+        display: flex !important; /* Buộc phải flex để hiển thị */
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: -280px; /* Giấu hoàn toàn hộp ngăn kéo sang lề trái ngoài màn hình */
+        width: 280px; /* Độ rộng an toàn để chứa trọn độ dài của chữ */
+        height: 100vh;
+        background-color: var(--bg-card);
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+        padding: 4.5rem 1.5rem 1.5rem 1.5rem; /* Khoảng cách phía trên rộng để chừa chỗ cho nút X */
+        gap: 1.5rem;
+        z-index: 2000; /* Đè lên trên toàn bộ trang web, bao gồm cả Header màu xanh */
+        transition: left 0.3s ease-in-out; /* Hiệu ứng trượt êm ái */
+        white-space: nowrap; /* Tuyệt đối ngăn chặn tiêu đề xuống hàng */
+        overflow-x: hidden;
+        border-bottom: none;
+    }
+
+    /* Khi được kích hoạt, trượt hộp ngăn kéo hiển thị ra ngoài */
+    .nav-tabs.show {
+        left: 0 !important;
+    }
+
+    .nav-link {
+        padding: 0.5rem 0;
+        border-bottom: none;
+        width: 100%;
+        white-space: nowrap; /* Tuyệt đối không cho chữ tự động xuống dòng */
+        display: block;
+    }
+
+    .nav-link.active {
+        border-bottom: none;
+        color: var(--primary);
+        font-weight: 700;
+    }
+
+    /* Hoạt cảnh xoay nút 3 gạch thành dấu X đóng menu */
+    .menu-toggle.active .bar:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+    .menu-toggle.active .bar:nth-child(2) {
+        opacity: 0;
+    }
+    .menu-toggle.active .bar:nth-child(3) {
+        transform: translateY(-8px) rotate(-45deg);
     }
 }

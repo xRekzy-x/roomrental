@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Rental - Trạng thái đóng tiền phòng</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/app.js?v=4"></script>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <h1>Room Rental Console</h1>
+            <span class="badge">Spring Boot Backend</span>
+        </div>
+    </header>
+
+    <div class="nav-container">
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-link">Phòng trọ</a>
+            <a href="renters.html" class="nav-link">Khách thuê</a>
+            <a href="vehicles.html" class="nav-link">Phương tiện</a>
+            <a href="accounts.html" class="nav-link">Tài khoản</a>
+            <a href="payments.html" class="nav-link active">Thanh toán</a>
+        </nav>
+    </div>
+
+    <main>
+        <!-- Bộ lọc tháng -->
+        <div class="card" style="width: 100%; margin-bottom: 1.5rem;">
+            <div class="card-header-flex" style="margin-bottom: 0;">
+                <h2>Trạng thái thanh toán theo kỳ</h2>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label for="billing-month-input" style="font-weight: 600; font-size: 0.9rem;">Tháng thanh toán:</label>
+                    <input type="month" id="billing-month-input" class="form-control" style="width: auto;" onchange="fetchPaymentRoomsStatus()">
+                </div>
+            </div>
+        </div>
+
+        <div style="width: 100%;" class="grid-layout">
+            <!-- Cột Chưa đóng tiền -->
+            <div class="card">
+                <h2 class="card-title" style="color: var(--danger); border-bottom: 2px solid var(--danger-bg); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    Chưa đóng (<span id="unpaid-count">0</span>)
+                </h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Số phòng</th>
+                                <th>Giá phòng</th>
+                                <th>Đã đóng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-unpaid-body">
+                            <!-- JS load dữ liệu -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cột Đã đóng tiền -->
+            <div class="card">
+                <!-- <div class = card-title>
+                    <h2 style="color: var(--success); border-bottom: 2px solid var(--success-bg); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                        Đã đóng hoàn tất (<span id="paid-count">0</span>)
+                    <h2 style="color: var(--success); border-bottom: 2px solid var(--success-bg); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                        Đóng chưa đủ (<span id="partial-paid-count">0</span>)
+                    </h2>
+                </div> -->
+            <div style="display:flex; gap:1rem;">
+
+                <h2 class="card-title"
+                    style="flex:1; color:var(--success); border-bottom:2px solid var(--success-bg);">
+                    Đã đóng hoàn tất (<span id="paid-count">0</span>)
+                </h2>
+
+                <h2 class="card-title"
+                    style="flex:1; color:var(--warning); border-bottom:2px solid var(--warning-bg);">
+                    Đóng chưa đủ (<span id="partial-paid-count">0</span>)
+                </h2>
+
+            </div>
+
+               
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Số phòng</th>
+                                <th>Giá phòng</th>
+                                <th>Đã đóng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-paid-body">
+                            <!-- JS load dữ liệu -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 1.5rem;">
+            <a href="payments.html" class="btn btn-secondary" style="display: inline-block; width: auto;">Quay lại lịch sử thanh toán</a>
+        </div>
+    </main>
+
+    <!-- HỘP THOẠI NỔI (MODAL) CHI TIẾT HÓA ĐƠN VÀ LỊCH SỬ CHUYỂN KHỎAN PHÒNG -->
+    <div id="room-bill-modal" class="modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <span class="close-btn" onclick="closeRoomBillModal()">&times;</span>
+            <h2 class="card-title" style="margin-bottom: 0.25rem; color: var(--primary);">
+                Chi tiết hóa đơn - Phòng <span id="bill-modal-room"></span>
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Kỳ thanh toán: <strong id="bill-modal-month"></strong>
+            </p>
+
+            <!-- Khung thông tin tổng quan -->
+            <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
+                    <div><strong>Khách thuê:</strong> <span id="bill-modal-renters">-</span></div>
+                    <div><strong>Giá phòng:</strong> <span id="bill-modal-price" style="font-weight: 600;">0 đ</span></div>
+                    <div><strong>Đã thanh toán:</strong> <span id="bill-modal-total-paid" style="color: var(--success); font-weight: bold;">0 đ</span></div>
+                    <div><strong>Trạng thái:</strong> <span id="bill-modal-status">-</span></div>
+                </div>
+            </div>
+
+            <!-- Bảng lịch sử các đợt nhận tiền -->
+            <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">
+                Lịch sử giao dịch chuyển khoản
+            </h3>
+            <div class="table-wrapper" style="max-height: 250px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã GD</th>
+                            <th>Ngày giờ</th>
+                            <th>Số tiền</th>
+                            <th>Nội dung chuyển khoản</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bill-modal-payments-body">
+                        <!-- JS load danh sách giao dịch -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 1.25rem; text-align: right;">
+                <button class="btn btn-secondary" onclick="closeRoomBillModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+
+    <footer>
+        <div class="footer-container">
+            <h3>Logs / System Response:</h3>
+            <div id="log-output" class="log-box">Chờ hành động...</div>
+        </div>
+    </footer>
+
+</body>
+</html>
