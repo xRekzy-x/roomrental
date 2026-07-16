@@ -129,11 +129,13 @@ public class sepayWebhookController {
         }
 
         // Biểu thức chính quy quét tìm các cụm có đúng 3 chữ số liên tiếp
-        Pattern pattern = Pattern.compile("(?<!\\\\d)\\\\d{3}(?!\\\\d)");
+        Pattern pattern = Pattern.compile("(?<!\\d)\\d{3}(?!\\d)");
+
         Matcher matcher = pattern.matcher(text);
 
         // Duyệt qua tất cả các cụm 3 số tìm thấy được từ trái qua phải
         while (matcher.find()) {
+            System.out.println("MATCH = " + matcher.group());
             String candidate = matcher.group(); // Ví dụ: lấy ra "999", hoặc "101"
             
             // Đối chiếu trực tiếp với database thông qua repository
@@ -216,6 +218,11 @@ public class sepayWebhookController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal roomPrice = r.getPrice() != null ? r.getPrice() : BigDecimal.ZERO;
+        Optional<utilityBill> billOpt = utilityBillRepo.findByRoomNumberAndBillingMonth(roomNumber, month);
+        if (billOpt.isPresent()) {
+            // Nếu có hóa đơn, mốc tiền cần đóng chính xác là tổng hóa đơn tháng đó
+            roomPrice = billOpt.get().getTotalAmount();
+        }
         BigDecimal remaining = roomPrice.subtract(totalPaid);
 
         List<renter> renters = renterRepo.findByRoomRoomNumber(roomNumber);
