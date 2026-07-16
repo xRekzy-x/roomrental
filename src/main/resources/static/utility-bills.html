@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Rental - Ghi số Điện Nước trực tiếp</title>
+    <link rel="stylesheet" href="/css/style.css?v=13">
+    <script src="/js/app.js?v=13"></script>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <h1>Room Rental Console</h1>
+            <span class="badge">Spring Boot Backend</span>
+        </div>
+    </header>
+
+    <div class="nav-container"></div>
+
+    <main>
+        <div class="card" style="width: 100%; margin-bottom: 1.5rem;">
+            <div class="card-header-flex" style="margin-bottom: 0;">
+                <h2>Bảng ghi số Điện Nước & Dịch vụ nhanh</h2>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label for="bill-month-select" style="font-weight: 600; font-size: 0.9rem;">Kỳ thanh toán:</label>
+                    <input type="month" id="bill-month-select" class="form-control" style="width: auto;" onchange="fetchUtilityBills()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="width: 100%;">
+            <div class="card-header-flex">
+                <span style="font-size: 0.85rem; color: var(--text-muted);">💡 Nhập số liệu trực tiếp vào các ô dưới đây và nhấn <strong>Lưu / Lập</strong> ở cuối dòng.</span>
+                <button onclick="fetchUtilityBills()" class="btn btn-secondary">Tải lại bảng</button>
+            </div>
+            <div class="table-wrapper">
+                <table class="responsive-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Số phòng</th>
+                            <th style="width: 180px;">Số Điện Cũ</th>
+                            <th style="width: 180px;">Số Điện Mới</th>
+                            <th style="width: 100px;">Đơn giá điện</th>
+                            <th style="width: 110px;">Tiền nước khoán</th>
+                            <th style="width: 190px;">Internet</th>
+                            <th style="width: 190px;">Máy giặt</th>
+                            <th style="width: 100px;">Phát sinh khác</th>
+                            <th style="width: 130px;">Tổng hóa đơn</th>
+                            <th style="width: 130px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-bills-body">
+                        <!-- JS tự động load toàn bộ phòng kèm ô nhập liệu -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <h3>Logs / System Response:</h3>
+            <div id="log-output" class="log-box">Chờ hành động...</div>
+        </div>
+    </footer>
+
+</body>
+</html>

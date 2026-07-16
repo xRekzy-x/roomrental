@@ -1,9 +1,9 @@
 package com.hung.roomrental.controller;
 
 import com.hung.roomrental.entity.account;
-import com.hung.roomrental.entity.renter;
+import com.hung.roomrental.entity.room;
 import com.hung.roomrental.repository.accountRepository;
-import com.hung.roomrental.repository.renterRepository;
+import com.hung.roomrental.repository.roomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +19,7 @@ public class accountController {
     private accountRepository accountRepo;
 
     @Autowired
-    private renterRepository renterRepo;
+    private roomRepository roomRepo;
 
     @GetMapping
     public List<account> getAllAccounts() {
@@ -54,12 +54,12 @@ public class accountController {
             
             acc.setRole(com.hung.roomrental.entity.role.valueOf((String) payload.get("role")));
             
-            String renterId = (String) payload.get("renterId");
-            if (renterId != null && !renterId.isBlank()) {
-                renter r = renterRepo.findById(renterId).orElse(null);
-                acc.setRenter(r);
+            String roomId = (String) payload.get("roomId");
+            if (roomId != null && !roomId.isBlank()) {
+                room r = roomRepo.findById(roomId).orElse(null);
+                acc.setRoom(r);
             } else {
-                acc.setRenter(null);
+                acc.setRoom(null);
             }
 
             return ResponseEntity.ok(accountRepo.save(acc));

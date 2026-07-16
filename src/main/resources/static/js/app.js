@@ -97,6 +97,7 @@ function injectSharedHeaderAndNav() {
                 <a href="vehicles.html" class="nav-link ${getActiveClass('vehicles.html')}">Phương tiện</a>
                 <a href="accounts.html" class="nav-link ${getActiveClass('accounts.html')}">Tài khoản</a>
                 <a href="payments.html" class="nav-link ${getActiveClass(['payments.html', 'payment-rooms.html'])}">Thanh toán</a>
+                <a href="utility-bills.html" class="nav-link ${getActiveClass('utility-bills.html')}">Hóa đơn</a>
             </nav>
         `;
     }
@@ -1144,4 +1145,228 @@ function filterPaymentRooms() {
             row.style.display = matchFound ? '' : 'none';
         }
     });
+}
+
+// --- QUẢN LÝ ĐIỆN NƯỚC TRỰC TIẾP TRÊN DÒNG (SPREADSHEET-STYLE UTILITY BILLS) ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('table-bills-body')) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('bill-month-select').value = `${year}-${month}`;
+        fetchUtilityBills();
+    }
+});
+
+async function fetchUtilityBills() {
+    const month = document.getElementById('bill-month-select').value;
+    try {
+        // 1. Tải toàn bộ phòng đang quản lý
+        const roomsRes = await fetch(`${API_BASE}/rooms`);
+        if (!roomsRes.ok) throw new Error("Không thể tải danh sách phòng.");
+        const rooms = await roomsRes.json();
+
+        // 2. Tải toàn bộ hóa đơn của tháng hiện tại
+        const billsRes = await fetch(`${API_BASE}/utility-bills?month=${month}`);
+        if (!billsRes.ok) throw new Error("Không thể tải danh sách hóa đơn kỳ này.");
+        const bills = await billsRes.json();
+
+        // Ánh xạ hóa đơn đã lập theo số phòng
+        const billMap = {};
+        bills.forEach(b => { billMap[b.roomNumber] = b; });
+
+        const tbody = document.getElementById('table-bills-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        // Sắp xếp các phòng theo thứ tự số tăng dần
+        rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
+
+        for (const r of rooms) {
+            const b = billMap[r.roomNumber];
+            
+            let oldElec = 0;
+            let newElec = 0;
+            let elecFee = 3500;
+            let waterFee = 15000;
+            let internetFee = 100000;
+            let washingMachineFee = 50000;
+            let otherFee = 0;
+            let note = '';
+            let totalAmount = r.price; // Mặc định bằng giá phòng cơ bản
+            let isCreated = false;
+            let billId = null;
+
+            if (b) {
+                oldElec = b.oldElectricity;
+                newElec = b.newElectricity;
+                elecFee = b.electricityFee;
+                waterFee = b.waterFee;
+                internetFee = b.internetFee;
+                washingMachineFee = b.washingMachineFee;
+                otherFee = b.otherFee;
+                note = b.note || '';
+                totalAmount = b.totalAmount;
+                isCreated = true;
+                billId = b.id;
+            } else {
+                // Nếu chưa có hóa đơn trong kỳ, tự động tải số điện mới của kỳ trước làm số cũ kỳ này
+                try {
+                    const suggestRes = await fetch(`${API_BASE}/utility-bills/suggest-previous/${r.roomNumber}?month=${month}`);
+                    if (suggestRes.ok) {
+                        const suggestData = await suggestRes.json();
+                        oldElec = suggestData.oldElectricity || 0;
+                        newElec = oldElec; // Đặt mặc định số mới bằng số cũ để tiện nhập tăng lên
+                    }
+                } catch (e) {
+                    console.error("Lỗi lấy chỉ số cũ tự động cho phòng " + r.roomNumber, e);
+                }
+            }
+
+            // Render dòng nhập liệu trực tiếp
+            tbody.innerHTML += `
+                <tr id="row-${r.roomNumber}" style="${!isCreated ? 'background-color: #fffdf5;' : ''}">
+                    <td data-label="Số phòng" style="font-weight: bold; font-family: monospace;">
+                        ${r.roomNumber}
+                    </td>
+                    <td data-label="Số Điện (Cũ)">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" class="inline-input" id="old-${r.roomNumber}" value="${oldElec}" oninput="recalculateInlineRow('${r.roomNumber}', ${r.price})" style="width: 70px;">
+                        </div>
+                    </td>
+                    <td data-label="Số Điện (Cũ)">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" class="inline-input" id="new-${r.roomNumber}" value="${newElec}" oninput="recalculateInlineRow('${r.roomNumber}', ${r.price})" style="width: 70px;">
+                        </div>
+                    </td>
+                    <td data-label="Đơn giá điện">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" class="inline-input" id="elecFee-${r.roomNumber}" value="${elecFee}" oninput="recalculateInlineRow('${r.roomNumber}', ${r.price})" style="width: 80px;">
+                        </div>
+                    </td>
+                    <td data-label="Tiền nước khoán">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" class="inline-input" id="waterFee-${r.roomNumber}" value="${waterFee}" oninput="recalculateInlineRow('${r.roomNumber}', ${r.price})" style="width: 85px;">
+                        </div>
+                    </td>
+                    <td data-label="Internet / Máy giặt">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" class="inline-input" id="internet-${r.roomNumber}" value="${internetFee}" oninput="recalculateInlineRow('${r.roomNumber}', ${r.price})" style="width: 85px;">
+                        </div>
+                    </td>
+                    <td data-label="Internet / Máy giặt">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" class="inline-input" id="wash-${r.roomNumber}" value="${washingMachineFee}" oninput="recalculateInlineRow('${r.roomNumber}', ${r.price})" style="width: 80px;">
+                        </div>
+                    </td>
+                    <td data-label="Phát sinh khác">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" class="inline-input" id="other-${r.roomNumber}" value="${otherFee}" oninput="recalculateInlineRow('${r.roomNumber}', ${r.price})" style="width: 80px;">
+                        </div>
+                    </td>
+                    <td data-label="Tổng hóa đơn" id="total-${r.roomNumber}" style="font-weight: bold; color: var(--primary); font-family: monospace;">
+                        ${parseFloat(totalAmount).toLocaleString()}đ
+                    </td>
+                    <td data-label="Hành động">
+                        <div style="display: flex; gap: 4px;">
+                            <button onclick="saveInlineBill('${r.roomNumber}', ${r.price})" class="btn" id="btn-save-${r.roomNumber}" style="font-size: 0.75rem; padding: 4px 8px; width: auto; color: white; background-color: ${isCreated ? 'var(--success)' : 'var(--primary)'};">
+                                ${isCreated ? 'Lưu' : 'Lập'}
+                            </button>
+                            ${isCreated ? `<button onclick="deleteInlineBill(${billId})" class="btn btn-danger" style="font-size: 0.75rem; padding: 4px 8px;">Xoá</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        log(`Đã nạp bảng tính trực tiếp cho ${rooms.length} phòng.`);
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+// Hàm tính toán tức thì ngay khi người dùng gõ số (không cần load lại trang)
+function recalculateInlineRow(roomNumber, roomPrice) {
+    const oldElec = parseInt(document.getElementById(`old-${roomNumber}`).value) || 0;
+    const newElec = parseInt(document.getElementById(`new-${roomNumber}`).value) || 0;
+    const elecFee = parseFloat(document.getElementById(`elecFee-${roomNumber}`).value) || 0;
+    const waterFee = parseFloat(document.getElementById(`waterFee-${roomNumber}`).value) || 0;
+    const internetFee = parseFloat(document.getElementById(`internet-${roomNumber}`).value) || 0;
+    const washingMachineFee = parseFloat(document.getElementById(`wash-${roomNumber}`).value) || 0;
+    const otherFee = parseFloat(document.getElementById(`other-${roomNumber}`).value) || 0;
+
+    const elecUsage = Math.max(0, newElec - oldElec);
+    const elecCost = elecUsage * elecFee;
+
+    const total = roomPrice + elecCost + waterFee + internetFee + washingMachineFee + otherFee;
+
+    // Cập nhật hiển thị cột Tổng tiền
+    document.getElementById(`total-${roomNumber}`).textContent = total.toLocaleString() + "đ";
+    
+    // Tạo hiệu ứng viền sáng ở nút "Lưu" để báo hiệu dòng này vừa thay đổi số liệu chưa đồng bộ
+    const saveBtn = document.getElementById(`btn-save-${roomNumber}`);
+    if (saveBtn) {
+        saveBtn.style.boxShadow = "0 0 8px var(--warning)";
+    }
+}
+
+// Gửi yêu cầu lưu dữ liệu của dòng xuống Backend
+async function saveInlineBill(roomNumber, roomPrice) {
+    const month = document.getElementById('bill-month-select').value;
+    
+    const payload = {
+        roomNumber: roomNumber,
+        billingMonth: month,
+        oldElectricity: parseInt(document.getElementById(`old-${roomNumber}`).value) || 0,
+        newElectricity: parseInt(document.getElementById(`new-${roomNumber}`).value) || 0,
+        electricityFee: parseFloat(document.getElementById(`elecFee-${roomNumber}`).value) || 0,
+        waterFee: parseFloat(document.getElementById(`waterFee-${roomNumber}`).value) || 0,
+        internetFee: parseFloat(document.getElementById(`internet-${roomNumber}`).value) || 0,
+        washingMachineFee: parseFloat(document.getElementById(`wash-${roomNumber}`).value) || 0,
+        otherFee: parseFloat(document.getElementById(`other-${roomNumber}`).value) || 0,
+        roomPrice: roomPrice,
+    };
+
+    if (payload.newElectricity < payload.oldElectricity) {
+        alert(`Lỗi phòng ${roomNumber}: Số điện mới không được nhỏ hơn số điện cũ.`);
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/utility-bills`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || "Lỗi máy chủ.");
+        }
+
+        log(`Đã lưu thành công hóa đơn phòng ${roomNumber} kỳ ${month}.`);
+        
+        // Tải lại bảng để cập nhật trạng thái màu dòng và ID hóa đơn mới
+        fetchUtilityBills();
+    } catch (err) {
+        alert(`Lỗi lưu hóa đơn phòng ${roomNumber}: ` + err.message);
+        log(err.message, true);
+    }
+}
+
+async function deleteInlineBill(billId) {
+    if (!confirm("Bạn chắc chắn muốn xóa hóa đơn này?")) return;
+    try {
+        const res = await fetch(`${API_BASE}/utility-bills/${billId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error("Không thể xóa.");
+        log("Đã xóa hóa đơn thành công.");
+        fetchUtilityBills();
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+function closeBillModal() {
+    const modal = document.getElementById('bill-modal');
+    if (modal) modal.style.display = 'none';
 }

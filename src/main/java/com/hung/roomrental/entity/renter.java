@@ -70,7 +70,5 @@ public class renter {
         this.roomNumber = roomNumber;
     }
 
-    @OneToMany(mappedBy = "renter")
-    @JsonIgnore
-    private List<account> accounts = new ArrayList<>();
+
 }

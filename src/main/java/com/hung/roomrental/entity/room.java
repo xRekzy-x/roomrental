@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,4 +58,8 @@ public class room {
     @OneToMany(mappedBy = "room")
     @JsonIgnore //Ngắt hoàn toàn vòng lặp từ room sang renter - tránh lặp lại vô hạn
     private List<renter> renters = new ArrayList<>();
+
+    @OneToOne(mappedBy = "room")
+    @JsonIgnore
+    private account account;
 }

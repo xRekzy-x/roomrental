@@ -206,7 +206,65 @@ main {
     flex-grow: 1; /* Chiếm trọn không gian trống bên dưới thẻ */
     overflow-x: auto;
 }
+/* ==========================================================================
+   NÉN BẢNG ĐIỆN NƯỚC HIỂN THỊ VỪA VẶN TRÊN DESKTOP (KHÔNG CẦN CUỘN NGANG)
+   ========================================================================== */
+@media (min-width: 1025px) {
+    /* 1. Thu hẹp tối đa khoảng cách đệm (padding) và giảm nhẹ cỡ chữ của bảng */
+    .table-wrapper th, 
+    .table-wrapper td {
+        padding: 0.5rem 0.3rem !important; /* Giảm khoảng cách giữa các cột */
+        font-size: 0.8rem !important;      /* Cỡ chữ nhỏ gọn chuyên nghiệp */
+        text-align: center !important;     /* Căn giữa cho cân đối */
+    }
 
+    /* Tiêu đề cột đầu tiên và cột cuối cùng căn lề phù hợp */
+    .table-wrapper th:first-child,
+    .table-wrapper td:first-child {
+        text-align: left !important;
+        white-space: nowrap !important; /* Giữ chữ "Phòng 101" trên 1 hàng */
+    }
+
+    /* 2. Nén độ rộng của các ô nhập liệu (inputs) */
+    .inline-input {
+        padding: 4px 6px !important;
+        font-size: 0.8rem !important;
+        height: 28px !important;
+        box-sizing: border-box;
+    }
+
+    /* Cố định chiều rộng tối đa các ô số nhỏ (số điện, phát sinh khác) */
+    input[id^="old-"], 
+    input[id^="new-"], 
+    input[id^="other-"] {
+        max-width: 55px !important; 
+    }
+
+    /* Cố định chiều rộng tối đa các ô số lớn (tiền nước, đơn giá, mạng, máy giặt) */
+    input[id^="elecFee-"],
+    input[id^="waterFee-"],
+    input[id^="internet-"],
+    input[id^="wash-"] {
+        max-width: 75px !important;
+    }
+
+    /* 3. Thu nhỏ nút Lưu và Xóa, ép hiển thị ngang hàng */
+    .table-wrapper td .btn {
+        padding: 4px 6px !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap !important;
+        display: inline-block !important;
+        width: auto !important;
+        line-height: 1 !important;
+    }
+
+    /* Khung chứa 2 nút Lưu/Xóa */
+    .table-wrapper td div {
+        display: flex !important;
+        gap: 3px !important;
+        justify-content: center;
+    }
+}
 /* ==========================================================================
    5. BẢNG (TABLES) & TRẠNG THÁI (STATUS TAGS)
    ========================================================================== */
@@ -655,4 +713,34 @@ footer h3 {
         font-weight: 700; /* Làm đậm nhãn tiêu đề */
         color: var(--text-muted);
     }
+}
+
+/* Style dành riêng cho bảng nhập liệu trực tiếp kiểu Excel */
+.inline-input {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 0.85rem;
+    font-family: monospace;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+    background-color: #fafafa;
+    transition: all 0.15s ease;
+}
+
+.inline-input:focus {
+    border-color: var(--primary);
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Ẩn nút tăng giảm mặc định của input type number để bảng gọn hơn */
+.inline-input::-webkit-outer-spin-button,
+.inline-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.inline-input[type=number] {
+    -moz-appearance: textfield;
 }

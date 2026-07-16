@@ -32,8 +32,8 @@ CREATE TABLE account (
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL, -- 'ADMIN', 'RENTER'
-    renter_id VARCHAR(30) NULL, -- liên kết tới renter nếu role = RENTER
-    CONSTRAINT fk_account_renter FOREIGN KEY (renter_id) REFERENCES renter(id)
+    room_id VARCHAR(20) NULL  UNIQUE, -- liên kết tới room nếu role = RENTER
+    CONSTRAINT fk_account_renter FOREIGN KEY (room_id) REFERENCES room(room_number)
 );
 
 CREATE TABLE room_seq_pool (
@@ -50,6 +50,23 @@ CREATE TABLE room_vehicle_pool (
     CONSTRAINT fk_pool_room_vehicle FOREIGN KEY (room_number) REFERENCES room(room_number) ON DELETE CASCADE
 );
 
+CREATE TABLE utility_bill (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    room_number VARCHAR(20) NOT NULL,
+    billing_month VARCHAR(7) NOT NULL, -- Định dạng: 'YYYY-MM'
+    old_electricity INT DEFAULT 0,
+    new_electricity INT DEFAULT 0,
+    electricity_fee DECIMAL(12,2) NOT NULL DEFAULT 3500.00,
+    water_fee DECIMAL(12,2) NOT NULL DEFAULT 15000.00,
+    internet_fee DECIMAL(12,2) NOT NULL DEFAULT 100000.00,
+    washing_machine_fee DECIMAL(12,2) NOT NULL DEFAULT 50000.00,
+    other_fee DECIMAL(12,2) DEFAULT 0.00,
+    room_price DECIMAL(12,2) NOT NULL,
+    total_amount DECIMAL(12,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_utility_bill_room FOREIGN KEY (room_number) REFERENCES room(room_number) ON DELETE CASCADE,
+    CONSTRAINT uq_room_month UNIQUE (room_number, billing_month)
+);
 -- ==========================================
 -- 2. TRIGGER TỰ ĐỘNG XỬ LÝ KHI THÊM (INSERT)
 -- ==========================================
