@@ -382,6 +382,7 @@ window.addEventListener('click', (e) => {
     const roomBillModal = document.getElementById('room-bill-modal');
     const editAccountModal = document.getElementById('editAccountModal');
     const assignRoomModal = document.getElementById('assignRoomModal');
+    const roomDetailModal = document.getElementById('room-detail-modal');
 
     if (e.target === roomModal) closeRoomModal();
     if (e.target === renterModal) closeRenterModal();
@@ -393,6 +394,7 @@ window.addEventListener('click', (e) => {
     if (e.target === roomBillModal) closeRoomBillModal();
     if (e.target === editAccountModal) closeEditAccount();
     if (e.target === assignRoomModal) closeAssignRoomModal();
+    if (e.target === roomDetailModal) closeRoomDetailModal();
 });
 
 // --- QUẢN LÝ PHÒNG TRỌ (ROOMS API) ---
@@ -407,11 +409,13 @@ async function fetchRooms() {
         rooms.forEach(room => {
             const statusClass = room.status.toLowerCase();
             tbody.innerHTML += `
-                <tr>
-                    <td data-label="Số phòng" style="font-family: monospace; font-weight: 600;">${room.roomNumber}</td>
-                    <td data-label="Diện tích">${room.area || '-'} m²</td>
-                    <td data-label="Giá tiền">${parseFloat(room.price).toLocaleString()} đ</td>
-                    <td data-label="Trạng thái"><span class="status-tag ${statusClass}">${room.status}</span></td>
+                <tr class="clickable-row">
+                    <td onclick="openRoomDetailModal('${room.roomNumber}')" data-label="Số phòng" style="font-family: monospace; font-weight: 600;">
+                        Phòng ${room.roomNumber}
+                    </td>
+                    <td onclick="openRoomDetailModal('${room.roomNumber}')" data-label="Diện tích">${room.area || '-'} m²</td>
+                    <td onclick="openRoomDetailModal('${room.roomNumber}')" data-label="Giá tiền">${parseFloat(room.price).toLocaleString()} đ</td>
+                    <td onclick="openRoomDetailModal('${room.roomNumber}')" data-label="Trạng thái"><span class="status-tag ${statusClass}">${room.status}</span></td>
                     <td data-label="Thao tác">
                         <button onclick="deleteRoom('${room.roomNumber}')" class="btn btn-danger">Xoá</button>
                         <button onclick="openEditRoomModal('${room.roomNumber}')" class="btn btn-warning">Sửa</button>
@@ -466,6 +470,79 @@ async function deleteRoom(roomNumber) {
         fetchRooms();
     } catch (err) {
         log(err.message, true);
+    }
+}
+
+async function openRoomDetailModal(roomNumber) {
+    const modal = document.getElementById('room-detail-modal');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+
+    // Đặt trạng thái chờ tải dữ liệu
+    document.getElementById('detail-room-number').textContent = roomNumber;
+    document.getElementById('detail-room-area').textContent = '...';
+    document.getElementById('detail-room-price').textContent = '...';
+    document.getElementById('detail-room-status').innerHTML = '...';
+    document.getElementById('detail-room-renters-count').textContent = '...';
+    document.getElementById('detail-renters-tbody').innerHTML = '<tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr>';
+    document.getElementById('detail-vehicles-tbody').innerHTML = '<tr><td colspan="2" style="text-align:center;">Đang tải...</td></tr>';
+
+    try {
+        const res = await fetch(`${API_BASE}/rooms/${roomNumber}/details`);
+        if (!res.ok) throw new Error('Không thể tải thông tin chi tiết phòng');
+        const data = await res.json();
+
+        // Nạp thông tin phòng
+        document.getElementById('detail-room-area').textContent = data.area || '-';
+        document.getElementById('detail-room-price').textContent = parseFloat(data.price).toLocaleString();
+        
+        const statusClass = data.status.toLowerCase();
+        document.getElementById('detail-room-status').innerHTML = `<span class="status-tag ${statusClass}">${data.status}</span>`;
+        document.getElementById('detail-room-renters-count').textContent = data.currentRenters || 0;
+
+        // Nạp bảng khách thuê
+        const rentersTbody = document.getElementById('detail-renters-tbody');
+        rentersTbody.innerHTML = '';
+        if (data.renters && data.renters.length > 0) {
+            data.renters.forEach(r => {
+                rentersTbody.innerHTML += `
+                    <tr>
+                        <td>${r.fullName}</td>
+                        <td style="font-family: monospace;">${r.cccd}</td>
+                        <td>${r.phone}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            rentersTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted);">Không có thành viên nào.</td></tr>';
+        }
+
+        // Nạp bảng phương tiện
+        const vehiclesTbody = document.getElementById('detail-vehicles-tbody');
+        vehiclesTbody.innerHTML = '';
+        if (data.vehicles && data.vehicles.length > 0) {
+            data.vehicles.forEach(v => {
+                vehiclesTbody.innerHTML += `
+                    <tr>
+                        <td style="font-family: monospace; font-weight: 600;">${v.plateNumber}</td>
+                        <td>${v.vehicleType}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            vehiclesTbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color: var(--text-muted);">Không có phương tiện nào.</td></tr>';
+        }
+
+    } catch (err) {
+        log(err.message, true);
+    }
+}
+
+function closeRoomDetailModal() {
+    const modal = document.getElementById('room-detail-modal');
+    if (modal) {
+        modal.style.display = 'none';
     }
 }
 
@@ -889,13 +966,19 @@ async function fetchPaymentRoomsStatus() {
             const isPartialPaid = item.totalPaid > 0 && item.totalPaid < item.price;
             const amountText = parseFloat(item.totalPaid).toLocaleString() + " đ";
             const priceText = parseFloat(item.price).toLocaleString() + " đ";
-            
+            const remaining = item.price - item.totalPaid;
+            const cashButtonHTML = remaining > 0 
+                ? `<button onclick="event.stopPropagation(); payWithCash('${item.roomNumber}', ${remaining})" class="btn" style="font-size: 0.75rem; padding: 4px 8px; width: auto; color: white; background-color: var(--success); line-height: 1;">Cash</button>`
+                :  `<button onclick="event.stopPropagation(); cancelPayments('${item.roomNumber}')" class="btn btn-danger" style="font-size: 0.75rem; padding: 4px 8px; width: auto; line-height: 1;">Hủy</button>`;
             const rowHTML = `
                 <tr class="clickable-row" onclick="openRoomBillModal('${item.roomNumber}')">
                     <td style="font-weight: bold; font-family: monospace;">Phòng ${item.roomNumber}</td>
                     <td>${priceText}</td>
                     <td style="font-family: monospace; font-weight: bold; color: ${isPaid ? isPartialPaid ? 'var(--warning)' : 'var(--success)' : 'var(--danger)'}">
                         ${amountText}
+                    </td>
+                    <td style="text-align: center;">
+                        ${cashButtonHTML}
                     </td>
                 </tr>
             `;
@@ -928,7 +1011,72 @@ async function fetchPaymentRoomsStatus() {
         log(err.message, true);
     }
 }
+async function payWithCash(roomNumber, remainingAmount) {
+    const monthInput = document.getElementById('billing-month-input');
+    const billingMonth = monthInput ? monthInput.value : '';
 
+    if (!billingMonth) {
+        alert("Vui lòng chọn kỳ thanh toán trước khi thu tiền mặt.");
+        return;
+    }
+
+    if (!confirm(`Xác nhận thu TIỀN MẶT số tiền ${remainingAmount.toLocaleString()}đ cho phòng ${roomNumber} (Kỳ ${billingMonth})?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/payments/cash-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                roomNumber: roomNumber,
+                billingMonth: billingMonth,
+                amount: remainingAmount.toString()
+            })
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || "Không thể thực hiện ghi nhận tiền mặt.");
+        }
+
+        log(`Đã ghi nhận thanh toán tiền mặt ${remainingAmount.toLocaleString()}đ cho phòng ${roomNumber}.`);
+        fetchPaymentRoomsStatus(); // Tải lại bảng để cập nhật trạng thái lập tức
+    } catch (err) {
+        alert("Lỗi thanh toán: " + err.message);
+        log(err.message, true);
+    }
+}
+async function cancelPayments(roomNumber) {
+    const monthInput = document.getElementById('billing-month-input');
+    const billingMonth = monthInput ? monthInput.value : '';
+
+    if (!billingMonth) {
+        alert("Vui lòng chọn kỳ thanh toán.");
+        return;
+    }
+
+    if (!confirm(`Xác nhận HỦY tất cả trạng thái thanh toán của phòng ${roomNumber} trong kỳ ${billingMonth}?\n\n- Giao dịch Tiền mặt (Cash) sẽ bị XÓA hoàn toàn.\n- Giao dịch Ngân hàng (SePay) sẽ bị GỠ GÁN PHÒNG về trạng thái tự do.`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/payments/room/${roomNumber}/cancel-payments?month=${billingMonth}`, {
+            method: 'POST'
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || "Không thể thực hiện hủy trạng thái thanh toán.");
+        }
+
+        log(`Đã hủy trạng thái thanh toán của phòng ${roomNumber} trong kỳ ${billingMonth}.`);
+        fetchPaymentRoomsStatus(); // Tải lại bảng để cập nhật giao diện ngay lập tức
+    } catch (err) {
+        alert("Lỗi khi hủy thanh toán: " + err.message);
+        log(err.message, true);
+    }
+}
 async function openRoomBillModal(roomNumber) {
     const monthInput = document.getElementById('billing-month-input');
     const selectedMonth = monthInput ? monthInput.value : '';
@@ -1369,4 +1517,433 @@ async function deleteInlineBill(billId) {
 function closeBillModal() {
     const modal = document.getElementById('bill-modal');
     if (modal) modal.style.display = 'none';
+}
+async function downloadAllInvoices() {
+    const monthSelect = document.getElementById('bill-month-select');
+    const month = monthSelect ? monthSelect.value : '';
+
+    if (!month) {
+        alert('Vui lòng chọn kỳ thanh toán trước khi tải.');
+        return;
+    }
+
+    if (!confirm(`Xác nhận kết xuất hóa đơn kỳ ${month} để in / lưu PDF?`)) {
+        return;
+    }
+
+    log(`Đang khởi tạo hóa đơn kỳ ${month}...`);
+
+    try {
+        const billsRes = await fetch(`${API_BASE}/utility-bills?month=${month}`);
+        if (!billsRes.ok) throw new Error("Không thể tải danh sách hóa đơn.");
+        const bills = await billsRes.json();
+
+        if (bills.length === 0) {
+            alert(`Không tìm thấy hóa đơn nào đã lập trong kỳ ${month} để tải về.`);
+            return;
+        }
+
+        const rentersRes = await fetch(`${API_BASE}/renters`);
+        const renters = rentersRes.ok ? await rentersRes.json() : [];
+
+        const renterMap = {};
+        renters.forEach(r => {
+            if (r.roomNumber) {
+                if (!renterMap[r.roomNumber]) renterMap[r.roomNumber] = [];
+                renterMap[r.roomNumber].push(`${r.fullName} - ${r.phone || '-'}`);
+            }
+        });
+
+        bills.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
+
+        const [year, monthVal] = month.split('-');
+        const monthDisplay = parseInt(monthVal);
+
+        let pagesHtml = '';
+        bills.forEach(bill => {
+            const roomNumber = bill.roomNumber;
+            const tenants = renterMap[roomNumber];
+            const tenantDisplay = tenants && tenants.length > 0
+                ? tenants.join(', ')
+                : `Phòng ${roomNumber} -`;
+
+            const oldElec = bill.oldElectricity !== null ? bill.oldElectricity : 0;
+            const newElec = bill.newElectricity !== null ? bill.newElectricity : 0;
+            const elecUsage = Math.max(0, newElec - oldElec);
+            const elecCost = elecUsage * (bill.electricityFee || 3500);
+
+            pagesHtml += `
+                <div class="invoice-pdf-page">
+                    <div class="header-right">
+                        Điện thoại liên hệ<br>
+                        0366 545 655 (A.Hà)
+                        <div class="underline"></div>
+                    </div>
+
+                    <div class="address-title">Nhà 194/14 Gò Dầu</div>
+
+                    <div class="main-title">PHIẾU THANH TOÁN TIỀN PHÒNG THÁNG ${monthDisplay} / ${year}</div>
+                    <div class="room-title">PHÒNG : ${roomNumber}</div>
+                    <div class="payment-period">
+                        (Thời gian thanh toán từ 1/${monthDisplay} đến ngày 5/${monthDisplay},<br>
+                        Ưu tiên nhận tiền mặt tại phòng đối diện 101)
+                    </div>
+
+                    <div class="tenant-info">Họ tên: ${tenantDisplay}</div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">STT</th>
+                                <th style="width: 38%;">Nội dung chi phí</th>
+                                <th style="width: 17%;">Chỉ số cũ</th>
+                                <th style="width: 17%;">Chỉ số mới</th>
+                                <th style="width: 20%;">Thành Tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="row-stt">1</td>
+                                <td class="row-label">Tiền phòng</td>
+                                <td></td>
+                                <td></td>
+                                <td class="price-cell">${parseFloat(bill.roomPrice).toLocaleString()} đ</td>
+                            </tr>
+                            <tr>
+                                <td class="row-stt">2</td>
+                                <td class="row-label">Tiền điện</td>
+                                <td>${elecUsage > 0 ? oldElec : ''}</td>
+                                <td>${elecUsage > 0 ? newElec : ''}</td>
+                                <td class="price-cell">${elecUsage > 0 ? parseFloat(elecCost).toLocaleString() + ' đ' : ''}</td>
+                            </tr>
+                            <tr>
+                                <td class="row-stt">3</td>
+                                <td class="row-label">Tiền nước</td>
+                                <td></td>
+                                <td></td>
+                                <td class="price-cell">${bill.waterFee > 0 ? parseFloat(bill.waterFee).toLocaleString() + ' đ' : ''}</td>
+                            </tr>
+                            <tr>
+                                <td class="row-stt">4</td>
+                                <td class="row-label">Tiền internet</td>
+                                <td></td>
+                                <td></td>
+                                <td class="price-cell">${bill.internetFee > 0 ? parseFloat(bill.internetFee).toLocaleString() + ' đ' : ''}</td>
+                            </tr>
+                            <tr>
+                                <td class="row-stt">5</td>
+                                <td class="row-label">Tiền rác + VS + điện chung</td>
+                                <td></td>
+                                <td></td>
+                                <td class="price-cell">${bill.otherFee > 0 ? parseFloat(bill.otherFee).toLocaleString() + ' đ' : ''}</td>
+                            </tr>
+                            <tr>
+                                <td class="row-stt">6</td>
+                                <td class="row-label">Tiền máy giặt</td>
+                                <td></td>
+                                <td></td>
+                                <td class="price-cell">${bill.washingMachineFee > 0 ? parseFloat(bill.washingMachineFee).toLocaleString() + ' đ' : ''}</td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td class="row-total">TỔNG</td>
+                                <td></td>
+                                <td></td>
+                                <td class="total-cell">${parseFloat(bill.totalAmount).toLocaleString()} đ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="footer-warning">*Lưu ý: Thanh toán qua tài khoản ghi rõ SỐ PHÒNG và ĐỊA CHỈ NHÀ.</div>
+                    <div class="footer-bank-title">*THANH TOÁN QUA TÀI KHOẢN:</div>
+                    <div class="footer-bank-details">● STK: 1038375144 - NH VIETCOMBANK - TRAN DINH HUNG</div>
+                </div>
+            `;
+        });
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('Trình duyệt đã chặn cửa sổ pop-up. Vui lòng cho phép pop-up cho trang này (biểu tượng bị chặn trên thanh địa chỉ) rồi thử lại.');
+            return;
+        }
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+                <meta charset="UTF-8">
+                <title>Hoa_Don_Tong_Hop_Ky_${month}</title>
+                <style>
+                    @page { size: A4; margin: 15mm; }
+                    * { box-sizing: border-box; }
+                    body { font-family: Arial, sans-serif; color: #000; margin: 0; background: #fff; }
+                    .invoice-pdf-page {
+                        page-break-after: always;
+                        padding: 10px;
+                    }
+                    .invoice-pdf-page:last-child { page-break-after: avoid; }
+                    .header-right {
+                        text-align: right; font-size: 14px; font-weight: bold;
+                        color: #0020ff; line-height: 1.4;
+                    }
+                    .underline { width: 220px; height: 2px; background-color: #0020ff; margin: 4px 0 4px auto; }
+                    .address-title {
+                        font-size: 24px; font-weight: bold; color: #ff0000;
+                        text-align: center; text-decoration: underline;
+                        margin-top: 10px; margin-bottom: 20px;
+                    }
+                    .main-title, .room-title {
+                        font-size: 18px; font-weight: bold; color: #ff0000;
+                        text-align: center; margin-bottom: 6px;
+                    }
+                    .payment-period {
+                        font-size: 14px; font-weight: bold; color: #ff0000;
+                        text-align: center; margin-bottom: 20px;
+                    }
+                    .tenant-info { font-size: 15px; font-weight: bold; color: #0020ff; margin-bottom: 12px; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
+                    th, td { border: 2px solid #000; padding: 8px; text-align: center; font-size: 14px; color: #000; }
+                    th { font-weight: bold; color: #ff0000; }
+                    .row-stt { font-weight: bold; color: #ff0000; }
+                    .row-label { font-weight: bold; color: #ff0000; text-align: left; }
+                    .row-total { font-weight: bold; color: #ff0000; font-size: 15px; }
+                    .price-cell { text-align: right; padding-right: 12px; font-weight: bold; }
+                    .total-cell { text-align: right; padding-right: 12px; font-weight: bold; color: #ff0000; font-size: 15px; }
+                    .footer-warning { font-size: 14px; font-weight: bold; color: #ff0000; margin-bottom: 12px; }
+                    .footer-bank-title { font-size: 14px; font-weight: bold; color: #0020ff; margin-bottom: 6px; }
+                    .footer-bank-details { font-size: 14px; font-weight: bold; color: #0020ff; margin-left: 18px; }
+                </style>
+            </head>
+            <body>
+                ${pagesHtml}
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+        };
+
+        log(`Đã mở cửa sổ in hóa đơn kỳ ${month}. Trong hộp thoại in, chọn máy in là "Save as PDF" / "Lưu dưới dạng PDF" để tải về máy.`);
+
+    } catch (err) {
+        alert("Lỗi khi xuất hóa đơn: " + err.message);
+        log(err.message, true);
+    }
+}
+async function exportAsExcel() {
+    const monthSelect = document.getElementById('bill-month-select');
+    const month = monthSelect ? monthSelect.value : '';
+
+    if (!month) {
+        alert('Vui lòng chọn kỳ thanh toán trước khi xuất Excel.');
+        return;
+    }
+
+    try {
+        // 1. Tải dữ liệu hóa đơn của kỳ được chọn từ API
+        const billsRes = await fetch(`${API_BASE}/utility-bills?month=${month}`);
+        if (!billsRes.ok) throw new Error("Không thể tải danh sách hóa đơn.");
+        const bills = await billsRes.json();
+
+        if (bills.length === 0) {
+            alert(`Không tìm thấy hóa đơn nào đã lập trong kỳ ${month} để xuất Excel.`);
+            return;
+        }
+
+        // Sắp xếp danh sách hóa đơn theo số phòng tăng dần
+        bills.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
+
+        // 2. Nội dung CSV (chuỗi thuần túy không chứa ký tự \uFEFF ở đầu)
+        let csvContent = "";
+        
+        const headers = [
+            "Số phòng",
+            "Chỉ số điện cũ",
+            "Chỉ số điện mới",
+            "Điện năng tiêu thụ (kWh)",
+            "Đơn giá điện (đ/kWh)",
+            "Thành tiền điện (đ)",
+            "Tiền nước khoán (đ)",
+            "Tiền Internet (đ)",
+            "Tiền Máy giặt (đ)",
+            "Phát sinh khác (đ)",
+            "Tiền phòng cơ bản (đ)",
+            "Tổng hóa đơn (đ)"
+        ];
+        
+        csvContent += headers.join(",") + "\n";
+
+        bills.forEach(b => {
+            const oldElec = b.oldElectricity !== null ? b.oldElectricity : 0;
+            const newElec = b.newElectricity !== null ? b.newElectricity : 0;
+            const usage = Math.max(0, newElec - oldElec);
+            const elecCost = usage * (b.electricityFee || 3500);
+
+            const row = [
+                `"${b.roomNumber}"`, // Đặt trong dấu ngoặc kép kép để tránh lỗi định dạng tự động của Excel
+                oldElec,
+                newElec,
+                usage,
+                b.electricityFee || 3500,
+                elecCost,
+                b.waterFee || 0,
+                b.internetFee || 0,
+                b.washingMachineFee || 0,
+                b.otherFee || 0,
+                b.roomPrice,
+                b.totalAmount
+            ];
+            csvContent += row.join(",") + "\n";
+        });
+
+        // 3. SỬA LỖI PHÔNG CHỮ: Truyền trực tiếp 3 Byte vật lý của UTF-8 BOM: 0xEF, 0xBB, 0xBF
+        // Việc này đảm bảo trình duyệt tải về tệp tin có Byte dấu hiệu UTF-8 ở đầu tệp tin một cách chính xác nhất
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Bao_Cao_Dien_Nuoc_Ky_${month}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        log(`Đã xuất báo cáo Excel kỳ ${month} (Đã xử lý hiển thị phông chữ tiếng Việt có dấu).`);
+
+    } catch (err) {
+        alert("Lỗi khi xuất tệp Excel: " + err.message);
+        log(err.message, true);
+    }
+}
+// Kích hoạt hộp thoại chọn tệp tin của hệ thống
+function importExcel() {
+    const fileInput = document.getElementById('import-excel-file');
+    if (fileInput) fileInput.click();
+}
+
+
+// Xử lý đọc tệp tin Excel/CSV và nạp dữ liệu hàng loạt vào hệ thống
+async function handleExcelImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const monthSelect = document.getElementById('bill-month-select');
+    const month = monthSelect ? monthSelect.value : '';
+
+    if (!month) {
+        alert('Vui lòng chọn kỳ thanh toán trước khi nhập Excel.');
+        event.target.value = ''; // Reset file input
+        return;
+    }
+
+    if (!confirm(`Xác nhận nhập dữ liệu hóa đơn từ tệp "${file.name}" vào kỳ ${month}?`)) {
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+
+        if (lines.length <= 1) {
+            alert("Tệp tin trống hoặc định dạng không hợp lệ.");
+            event.target.value = '';
+            return;
+        }
+
+        // Tự động bỏ qua dòng định cấu hình dấu tách "sep=" và dòng Tiêu đề cột nếu có
+        let startIndex = 0;
+        if (lines[0].toLowerCase().includes("sep=")) {
+            startIndex = 2; // Bỏ qua dòng cấu hình sep= và dòng header
+        } else if (lines[0].toLowerCase().includes("số phòng") || lines[0].toLowerCase().includes("so phong")) {
+            startIndex = 1; // Bỏ qua dòng header
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+        const promises = [];
+
+        log(`Đang phân tích tệp Excel và truyền dữ liệu...`);
+
+        for (let i = startIndex; i < lines.length; i++) {
+            const line = lines[i];
+            
+            // Nhận diện vạch chia cột động (CSV dấu phẩy hoặc dấu chấm phẩy của Excel vùng Châu Âu)
+            const delimiter = line.includes(';') ? ';' : ',';
+            const cols = line.split(delimiter).map(col => col.trim().replace(/^["']|["']$/g, ''));
+
+            if (cols.length < 11) continue; // Bỏ qua nếu dòng không đủ cấu trúc cột tối thiểu
+
+            const roomNumber = cols[0];
+            const oldElec = parseInt(cols[1]) || 0;
+            const newElec = parseInt(cols[2]) || 0;
+            const elecFee = parseFloat(cols[4]) || 3500;
+            const waterFee = parseFloat(cols[6]) || 0;
+            const internetFee = parseFloat(cols[7]) || 0;
+            const washingMachineFee = parseFloat(cols[8]) || 0;
+            const otherFee = parseFloat(cols[9]) || 0;
+            const roomPrice = parseFloat(cols[10]) || 0;
+
+            // Kiểm tra tính hợp lệ cơ bản của chỉ số điện
+            if (newElec < oldElec) {
+                log(`⚠️ Lỗi dữ liệu phòng ${roomNumber}: Chỉ số mới (${newElec}) nhỏ hơn chỉ số cũ (${oldElec}). Bỏ qua phòng này.`, true);
+                errorCount++;
+                continue;
+            }
+
+            const payload = {
+                roomNumber: roomNumber,
+                billingMonth: month,
+                oldElectricity: oldElec,
+                newElectricity: newElec,
+                electricityFee: elecFee,
+                waterFee: waterFee,
+                internetFee: internetFee,
+                washingMachineFee: washingMachineFee,
+                otherFee: otherFee,
+                roomPrice: roomPrice
+            };
+
+            // Đưa các fetch request vào danh sách để gửi song song lên máy chủ
+            const promise = fetch(`${API_BASE}/utility-bills`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(async res => {
+                if (res.ok) {
+                    successCount++;
+                } else {
+                    const errMsg = await res.text();
+                    log(`❌ Lỗi nhập liệu phòng ${roomNumber}: ${errMsg}`, true);
+                    errorCount++;
+                }
+            }).catch(err => {
+                log(`❌ Sự cố kết nối khi nạp phòng ${roomNumber}: ${err.message}`, true);
+                errorCount++;
+            });
+
+            promises.push(promise);
+        }
+
+        // Chờ toàn bộ các tiến trình truyền dữ liệu hoàn tất
+        await Promise.all(promises);
+
+        alert(`Kết quả nhập dữ liệu Excel kỳ ${month}:\n- Thành công: ${successCount} phòng\n- Thất bại/Bỏ qua: ${errorCount} phòng`);
+        log(`Hoàn tất nạp dữ liệu từ Excel kỳ ${month}: Thành công ${successCount}, Thất bại/Bỏ qua ${errorCount}.`);
+        
+        // Làm sạch bộ chọn file và tải lại bảng dữ liệu trên màn hình
+        event.target.value = '';
+        fetchUtilityBills();
+    };
+
+    // Đọc tệp tin dưới dạng mã hóa UTF-8 để bảo toàn phông chữ tiếng Việt
+    reader.readAsText(file, "UTF-8");
 }

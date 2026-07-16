@@ -40,6 +40,7 @@
                                 <th>Số phòng</th>
                                 <th>Giá phòng</th>
                                 <th>Đã đóng</th>
+                                <th style="text-align: center;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="table-unpaid-body">
@@ -51,26 +52,19 @@
 
             <!-- Cột Đã đóng tiền -->
             <div class="card">
-                <!-- <div class = card-title>
-                    <h2 style="color: var(--success); border-bottom: 2px solid var(--success-bg); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                <div style="display:flex; gap:1rem;">
+
+                    <h2 class="card-title"
+                        style="flex:1; color:var(--success); border-bottom:2px solid var(--success-bg);">
                         Đã đóng hoàn tất (<span id="paid-count">0</span>)
-                    <h2 style="color: var(--success); border-bottom: 2px solid var(--success-bg); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    </h2>
+
+                    <h2 class="card-title"
+                        style="flex:1; color:var(--warning); border-bottom:2px solid var(--warning-bg);">
                         Đóng chưa đủ (<span id="partial-paid-count">0</span>)
                     </h2>
-                </div> -->
-            <div style="display:flex; gap:1rem;">
 
-                <h2 class="card-title"
-                    style="flex:1; color:var(--success); border-bottom:2px solid var(--success-bg);">
-                    Đã đóng hoàn tất (<span id="paid-count">0</span>)
-                </h2>
-
-                <h2 class="card-title"
-                    style="flex:1; color:var(--warning); border-bottom:2px solid var(--warning-bg);">
-                    Đóng chưa đủ (<span id="partial-paid-count">0</span>)
-                </h2>
-
-            </div>
+                </div>
 
                
                 
@@ -81,6 +75,7 @@
                                 <th>Số phòng</th>
                                 <th>Giá phòng</th>
                                 <th>Đã đóng</th>
+                                <th style="text-align: center;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="table-paid-body">

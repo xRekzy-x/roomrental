@@ -11,6 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+import com.hung.roomrental.entity.utilityBill;
+import com.hung.roomrental.repository.utilityBillRepository;
+import java.util.Optional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,6 +40,9 @@ public class sepayWebhookController {
 
     @Autowired
     private renterRepository renterRepo;
+
+    @Autowired
+    private utilityBillRepository utilityBillRepo;
 
     // Mã bảo mật tự chọn khớp với cấu hình trên SePay Dashboard
     private final String API_KEY = "api_go_dau_hung_fabulous";
@@ -162,14 +169,24 @@ public class sepayWebhookController {
         // Tạo cấu trúc dữ liệu trả về cho frontend
         List<Map<String, Object>> result = new ArrayList<>();
         for (com.hung.roomrental.entity.room r : allRooms) {
-            BigDecimal totalPaid = paidMap.getOrDefault(r.getRoomNumber(), BigDecimal.ZERO);
+                       BigDecimal totalPaid = paidMap.getOrDefault(r.getRoomNumber(), BigDecimal.ZERO);
             
-            // Một phòng được coi là Đã đóng nếu tổng số tiền đóng lớn hơn hoặc bằng giá thuê phòng
-            boolean isPaid = totalPaid.compareTo(r.getPrice()) >= 0;
+            // Mốc tiền cần đóng mặc định là giá phòng cơ bản
+            BigDecimal targetPrice = r.getPrice() != null ? r.getPrice() : BigDecimal.ZERO;
+            
+            // Rà soát tìm hóa đơn điện nước của phòng trong tháng này
+            Optional<utilityBill> billOpt = utilityBillRepo.findByRoomNumberAndBillingMonth(r.getRoomNumber(), month);
+            if (billOpt.isPresent()) {
+                // Nếu đã lập hóa đơn, mốc tiền cần đóng chính xác là TỔNG TIỀN hóa đơn tháng đó (gồm điện, nước, dịch vụ...)
+                targetPrice = billOpt.get().getTotalAmount();
+            }
+
+            // Một phòng được coi là Đã đóng nếu tổng số tiền đóng lớn hơn hoặc bằng tổng hóa đơn tháng đó
+            boolean isPaid = totalPaid.compareTo(targetPrice) >= 0;
 
             Map<String, Object> statusMap = new HashMap<>();
             statusMap.put("roomNumber", r.getRoomNumber());
-            statusMap.put("price", r.getPrice());
+            statusMap.put("price", targetPrice); // Sử dụng mốc tiền động của tháng đó
             statusMap.put("totalPaid", totalPaid);
             statusMap.put("isPaid", isPaid);
             result.add(statusMap);
@@ -238,6 +255,83 @@ public class sepayWebhookController {
             }
             return ResponseEntity.ok(paymentRepo.save(p));
         }).orElse(ResponseEntity.notFound().build());
+    }
+    @PostMapping("/cash-payment")
+    public ResponseEntity<?> createCashPayment(@RequestBody Map<String, String> payload) {
+        try {
+            String roomNumber = payload.get("roomNumber");
+            String billingMonth = payload.get("billingMonth");
+            String amountStr = payload.get("amount");
+
+            if (roomNumber == null || roomNumber.isBlank()) {
+                return ResponseEntity.badRequest().body("Thiếu số phòng.");
+            }
+            if (billingMonth == null || billingMonth.isBlank()) {
+                return ResponseEntity.badRequest().body("Thiếu kỳ thanh toán.");
+            }
+            if (amountStr == null || amountStr.isBlank()) {
+                return ResponseEntity.badRequest().body("Thiếu số tiền thanh toán.");
+            }
+
+            java.math.BigDecimal amount = new java.math.BigDecimal(amountStr);
+
+            // Tạo mã giao dịch mặt định dạng duy nhất: CASH-{roomNumber}-{timestamp}
+            String txId = "CASH-" + roomNumber + "-" + System.currentTimeMillis();
+
+            payment newPayment = payment.builder()
+                    .roomNumber(roomNumber)
+                    .amount(amount)
+                    .billingMonth(billingMonth)
+                    .paymentDate(LocalDateTime.now())
+                    .transactionId(txId)
+                    .content("Thanh toán tiền mặt phòng " + roomNumber)
+                    .status("PAID")
+                    .build();
+
+            paymentRepo.save(newPayment);
+
+            System.out.println("✅ Ghi nhận đóng tiền mặt thành công cho phòng " + roomNumber + ", Số tiền: " + amount + "đ");
+            return ResponseEntity.ok(newPayment);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi máy chủ: " + e.getMessage());
+        }
+    }
+    @PostMapping("/room/{roomNumber}/cancel-payments")
+    @Transactional
+    public ResponseEntity<?> cancelRoomPayments(
+            @PathVariable String roomNumber,
+            @RequestParam("month") String month) {
+        try {
+            // Lấy tất cả các giao dịch thanh toán của phòng này trong tháng đó
+            List<payment> payments = paymentRepo.findByRoomNumberAndBillingMonth(roomNumber, month);
+
+            if (payments.isEmpty()) {
+                return ResponseEntity.badRequest().body("Không tìm thấy giao dịch nào để hủy cho phòng này.");
+            }
+
+            int deletedCount = 0;
+            int unassignedCount = 0;
+
+            for (payment p : payments) {
+                if (p.getTransactionId() != null && p.getTransactionId().startsWith("CASH-")) {
+                    // Nếu là giao dịch Tiền mặt -> Xóa hoàn toàn khỏi DB
+                    paymentRepo.delete(p);
+                    deletedCount++;
+                } else {
+                    // Nếu là giao dịch Chuyển khoản ngân hàng SePay -> Chỉ gỡ gán phòng (unassign)
+                    p.setRoomNumber(null);
+                    paymentRepo.save(p);
+                    unassignedCount++;
+                }
+            }
+
+            System.out.println("🔄 Hủy thanh toán thành công cho phòng " + roomNumber + ". Đã xóa " + deletedCount + " GD tiền mặt, gỡ gán " + unassignedCount + " GD SePay.");
+            return ResponseEntity.ok("Đã hủy thành công " + (deletedCount + unassignedCount) + " giao dịch.");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi máy chủ nội bộ: " + e.getMessage());
+        }
     }
 }
 

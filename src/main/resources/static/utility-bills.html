@@ -5,17 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Rental - Ghi số Điện Nước trực tiếp</title>
     <link rel="stylesheet" href="/css/style.css?v=13">
-    <script src="/js/app.js?v=13"></script>
+    <script src="/js/app.js?v=14"></script>
 </head>
 <body>
 
-    <header>
-        <div class="header-container">
-            <h1>Room Rental Console</h1>
-            <span class="badge">Spring Boot Backend</span>
-        </div>
-    </header>
-
+    <header></header>
     <div class="nav-container"></div>
 
     <main>
@@ -29,11 +23,17 @@
             </div>
         </div>
 
-        <div class="card" style="width: 100%;">
-            <div class="card-header-flex">
-                <span style="font-size: 0.85rem; color: var(--text-muted);">💡 Nhập số liệu trực tiếp vào các ô dưới đây và nhấn <strong>Lưu / Lập</strong> ở cuối dòng.</span>
-                <button onclick="fetchUtilityBills()" class="btn btn-secondary">Tải lại bảng</button>
+       <div class="header-actions">
+            <div class="search-box-container">
+                <input type="text" id="search-input" placeholder="Tìm số phòng..." oninput="filterTable('table-bills-body')" class="search-input">
             </div>
+            <button onclick="fetchUtilityBills()" class="btn btn-secondary">Tải lại bảng</button>
+            <button onclick="loadPreviousMonthFees()" class="btn btn-secondary">Load tháng trước</button>
+            <button onclick="downloadAllInvoices()" class="btn" style="background-color: #4f46e5; color: white;">In tất cả</button>
+            <button onclick="exportAsExcel()" class="btn" style="background-color: #10b981; color: white;">Xuất Excel</button>
+            <button onclick="triggerExcelImport()" class="btn" style="background-color: #2563eb; color: white;">Nhập Excel</button>
+            <input type="file" id="import-excel-file" accept=".csv" style="display: none;" onchange="handleExcelImport(event)">
+        </div>
             <div class="table-wrapper">
                 <table class="responsive-table">
                     <thead>
@@ -45,7 +45,7 @@
                             <th style="width: 110px;">Tiền nước khoán</th>
                             <th style="width: 190px;">Internet</th>
                             <th style="width: 190px;">Máy giặt</th>
-                            <th style="width: 100px;">Phát sinh khác</th>
+                            <th style="width: 100px;">Rác/VS/Điện chung</th>
                             <th style="width: 130px;">Tổng hóa đơn</th>
                             <th style="width: 130px;">Hành động</th>
                         </tr>

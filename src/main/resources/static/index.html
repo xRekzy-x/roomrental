@@ -108,6 +108,63 @@
                 </form>
             </div>
         </div>
+       <!-- Hộp thoại nổi (Modal) xem chi tiết phòng -->
+        <div id="room-detail-modal" class="modal">
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="close-btn" onclick="closeRoomDetailModal()">&times;</span>
+                <h2 class="card-title" style="margin-bottom: 1rem; color: var(--primary);">
+                    Chi tiết phòng <span id="detail-room-number"></span>
+                </h2>
+                
+                <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
+                        <div><strong>Diện tích:</strong> <span id="detail-room-area">-</span> m²</div>
+                        <div><strong>Giá thuê:</strong> <span id="detail-room-price">-</span> đ</div>
+                        <div><strong>Trạng thái:</strong> <span id="detail-room-status">-</span></div>
+                        <div><strong>Số lượng khách hiện tại:</strong> <span id="detail-room-renters-count">0</span></div>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">
+                    Thành viên trong phòng
+                </h3>
+                <div class="table-wrapper" style="margin-bottom: 1rem; max-height: 150px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Họ và tên</th>
+                                <th>CCCD</th>
+                                <th>SĐT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detail-renters-tbody">
+                            <!-- JS load dữ liệu -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">
+                    Danh sách phương tiện
+                </h3>
+                <div class="table-wrapper" style="max-height: 150px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Biển số xe</th>
+                                <th>Loại xe</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detail-vehicles-tbody">
+                            <!-- JS load dữ liệu -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1.25rem; text-align: right;">
+                    <button class="btn btn-secondary" onclick="closeRoomDetailModal()" style="width: auto;">Đóng</button>
+                </div>
+            </div>
+        </div>
     </main>
 
    

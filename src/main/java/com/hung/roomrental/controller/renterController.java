@@ -7,6 +7,7 @@ import com.hung.roomrental.repository.roomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.hung.roomrental.entity.roomStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,12 @@ public class renterController {
                 savedRenter.setRoomNumber(savedRenter.getRoom().getRoomNumber());
             }
 
+            if (existingRoom.getStatus() == roomStatus.AVAILABLE) {
+                roomRepo.updateRoomStatus(targetRoomNumber, roomStatus.OCCUPIED);
+                savedRenter.getRoom().setStatus(roomStatus.OCCUPIED);
+            }
+
+
             return ResponseEntity.ok(savedRenter);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Lỗi máy chủ: " + e.getMessage());
@@ -87,7 +94,19 @@ public class renterController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRenter(@PathVariable String id) {
         return renterRepo.findById(id).map(r -> {
+            String roomNumber = (r.getRoom() != null) ? r.getRoom().getRoomNumber() : null;
+
             renterRepo.delete(r);
+            renterRepo.flush(); // Ép đồng bộ xuống DB ngay lập tức để Trigger giảm current_renters được kích hoạt
+
+            // Sau khi xóa xong, kiểm tra số lượng người thuê thực tế còn lại trong phòng
+            if (roomNumber != null) {
+                long remainingRenters = renterRepo.countRentersInRoom(roomNumber);
+                if (remainingRenters == 0) {
+                    roomRepo.updateRoomStatus(roomNumber, roomStatus.AVAILABLE);
+                }
+            }
+
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -102,17 +121,45 @@ public class renterController {
             renter r = renterRepo.findById(id)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy khách thuê."));
 
+            // 1. Lưu lại thông tin phòng cũ và phòng mới (nếu có thay đổi)
+            String oldRoomNumber = (r.getRoom() != null) ? r.getRoom().getRoomNumber() : null;
+            String newRoomNumber = (updated.getRoomNumber() != null && !updated.getRoomNumber().isBlank()) 
+                    ? updated.getRoomNumber().trim() 
+                    : null;
+
             r.setFullName(updated.getFullName());
             r.setPhone(updated.getPhone());
             r.setDob(updated.getDob());
 
-            if (updated.getRoomNumber() != null) {
-                room room = roomRepo.findById(updated.getRoomNumber())
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng."));
+            boolean roomChanged = false;
+            if (newRoomNumber != null && !newRoomNumber.equals(oldRoomNumber)) {
+                room room = roomRepo.findById(newRoomNumber)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng " + newRoomNumber));
                 r.setRoom(room);
+                roomChanged = true;
             }
 
             renterRepo.saveAndFlush(r);
+
+            // 3. Nếu khách được chuyển sang phòng khác, tiến hành cập nhật trạng thái của cả 2 phòng
+            if (roomChanged) {
+                // Đối với phòng cũ: Kiểm tra xem còn khách nào ở lại không
+                if (oldRoomNumber != null) {
+                    long remainingRenters = renterRepo.countRentersInRoom(oldRoomNumber);
+                    if (remainingRenters == 0) {
+                        roomRepo.updateRoomStatus(oldRoomNumber, roomStatus.AVAILABLE);
+                    }
+                }
+
+                // Đối với phòng mới: Chuyển sang OCCUPIED nếu phòng này đang trống (AVAILABLE)
+                if (newRoomNumber != null) {
+                    roomRepo.findById(newRoomNumber).ifPresent(nr -> {
+                        if (nr.getStatus() == roomStatus.AVAILABLE) {
+                            roomRepo.updateRoomStatus(newRoomNumber, roomStatus.OCCUPIED);
+                        }
+                    });
+                }
+            }
 
             return ResponseEntity.ok(r);
 

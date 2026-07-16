@@ -18,6 +18,9 @@ public interface renterRepository extends JpaRepository<renter, String> {
 
     List<renter> findByRoomRoomNumber(String roomNumber);
 
+    @Query("SELECT COUNT(r) FROM renter r WHERE r.room.roomNumber = :roomNumber")
+    long countRentersInRoom(@Param("roomNumber") String roomNumber);
+
     @Modifying
     @Transactional
     @Query(value = "INSERT INTO renter (full_name, cccd_number, phone, dob, room_number) VALUES (:fullName, :cccdNumber, :phone, :dob, :roomNumber)", nativeQuery = true)
